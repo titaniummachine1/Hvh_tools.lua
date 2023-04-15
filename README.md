@@ -4,5 +4,5 @@
 # Hvh_tools.lua
 tools for hvh such as anty aim and resolver in future
 
-[![Download Latest](https://img.shields.io/github/downloads/titaniummachine1/Hvh_tools/blob/main/Hvh_tools.lua/total.svg?style=for-the-badge&logo=download&label=Download%20Latest)](https://github.com/titaniummachine1/Hvh_tools/blob/main/Hvh_tools.lua/releases/latest/download/Hvh_tools/blob/main/Hvh_tools.lua)
+[![Download Latest](https://img.shields.io/github/downloads/titaniummachine1/Hvh_tools.lua/blob/main/Hvh_tools.lua/total.svg?style=for-the-badge&logo=download&label=Download%20Latest)](https://github.com/titaniummachine1/Hvh_tools.lua/blob/main/Hvh_tools.lua/releases/latest/download/Hvh_tools.lua/blob/main/Hvh_tools.lua)
 
