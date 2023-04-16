@@ -31,10 +31,12 @@ local RandomToggle       = menu:AddComponent(MenuLib.Checkbox("Random Yaw", true
 local RandomPitchToogle  = menu:AddComponent(MenuLib.Checkbox("Random Pitch", true))
 local RandomPitchtype    = menu:AddComponent(MenuLib.Checkbox("Random Pitch type", true))
 local downPitch          = menu:AddComponent(MenuLib.Checkbox("Allow Down", false))
-local mdelay             = menu:AddComponent(MenuLib.Slider("Speed", 1, 250, 1))
 local Antioverlap        = menu:AddComponent(MenuLib.Checkbox("anti overlap", true))
 local atenemy            = menu:AddComponent(MenuLib.Checkbox("at enemy", true))
 local offset             = menu:AddComponent(MenuLib.Slider("offset", -180, 180, -2))
+local mdelay             = menu:AddComponent(MenuLib.Slider("Static Speed", 1, 200, 0))
+local mdelayrandommin       = menu:AddComponent(MenuLib.Slider("Speed min", 1, 199, 1))
+local mdelayrandommax       = menu:AddComponent(MenuLib.Slider("Speed max", 2, 200, 5))
 --local mmVisuals          = menu:AddComponent(MenuLib.Checkbox("Indicators", false))
 local FakeLagToggle      = menu:AddComponent(MenuLib.Checkbox("Random Fake Lag", true))
 
@@ -169,14 +171,20 @@ local function OnCreateMove(userCmd)
     
         gui.SetValue("Anti Aim - Custom Yaw (Real)", yaw)
     end
+
+    --random speed
+    local delay = mdelay:GetValue()
+    if mdelay:GetValue() == 0 then
+        delay = math.random(mdelayrandommin:GetValue(), mdelayrandommax:GetValue())
+    end
     --local angles = Math.PositionAngles(me:GetEyePos(), currentTarget.pos)
     if RandomToggle:GetValue() == true then
         if not atenemy:GetValue() then
-            if tick_count % mdelay:GetValue() == 0 then -- delay
+            if tick_count % delay == 0 then -- delay
                 gui.SetValue("Anti Aim - Custom Yaw (Real)", math.random(-180, 180))
             end
         end
-        if tick_count % mdelay:GetValue() == 0 then -- delay
+        if tick_count % delay == 0 then -- delay
             if Antioverlap:GetValue() then
                 local YawFake = math.random(-180, 180)
                 while math.abs(YawFake - gui.GetValue("Anti Aim - Custom Yaw (Real)")) <= 37 do
@@ -190,7 +198,7 @@ local function OnCreateMove(userCmd)
     end
 
     if RandomPitchToogle:GetValue() then
-        if tick_count % mdelay:GetValue() == 0 then     -- delay
+        if tick_count % delay == 0 then     -- delay
             --[[if FakeAngle == RealAngle then
             RealAngle = somethingElse
             end]]
