@@ -36,10 +36,10 @@ local Antioverlap        = menu:AddComponent(MenuLib.Checkbox("anti overlap", tr
 local atenemy            = menu:AddComponent(MenuLib.Checkbox("at enemy", true))
 local offset             = menu:AddComponent(MenuLib.Slider("offset", -180, 180, -2))
 --local mmVisuals          = menu:AddComponent(MenuLib.Checkbox("Indicators", false))
-local FakeLagToggle      = menu:AddComponent(MenuLib.Checkbox("Random Fake Lag", false))
+local FakeLagToggle      = menu:AddComponent(MenuLib.Checkbox("Random Fake Lag", true))
 
-local MinFakeLag         = menu:AddComponent(MenuLib.Slider("Fake Lag Min Value", 1, 22, 14))
-local MaxFakeLag         = menu:AddComponent(MenuLib.Slider("Fake Lag Max Value", 1, 22, 22))
+local MinFakeLag         = menu:AddComponent(MenuLib.Slider("Fake Lag Min Value", 1, 329, 329))
+local MaxFakeLag         = menu:AddComponent(MenuLib.Slider("Fake Lag Max Value", 2, 330, 330))
 
 local JitterToggle       = menu:AddComponent(MenuLib.Checkbox("(Yaw) Jitter", false))
 local JitterReal         = menu:AddComponent(MenuLib.Slider("Real Angle Jitter", -180, 180, 140))
@@ -52,8 +52,8 @@ local SemiSpinToggle     = menu:AddComponent(MenuLib.Checkbox("(Yaw) Semi Spin (
 local SemiSpinOffset     = menu:AddComponent(MenuLib.Slider("Spin Angle", -179, 180, 50))
 local SemiSpinRealOffset = menu:AddComponent(MenuLib.Slider("Real Angle Offset", -180, 180, 50))
 
-menu:AddComponent(MenuLib.Label("                 Resolver(soon)"), ItemFlags.FullWidth)
-local BruteforceYaw       = menu:AddComponent(MenuLib.Checkbox("Bruteforce Yaw", false))
+--menu:AddComponent(MenuLib.Label("                 Resolver(soon)"), ItemFlags.FullWidth)
+--local BruteforceYaw       = menu:AddComponent(MenuLib.Checkbox("Bruteforce Yaw", false))
 
 tick_count               = 0
 local pitch = 0
@@ -227,7 +227,7 @@ local function OnCreateMove(userCmd)
         --gui.SetValue("Anti Aim - Custom Pitch (Real)", math.random(-90, 90 ))s
 
         if FakeLagToggle:GetValue() == true then
-            ticks = math.random(MinFakeLag.Value, MaxFakeLag.Value) * 15
+            gui.SetValue("Fake Lag Value (MS)", math.random(MinFakeLag:GetValue(), MaxFakeLag:GetValue())) -- Untested, but should work.
         end
 
         if JitterToggle:GetValue() == true then
@@ -265,9 +265,9 @@ local function OnCreateMove(userCmd)
         end
     end
 
-    if BruteforceYaw:GetValue() then
+    --if BruteforceYaw:GetValue() then
         
-    end
+    --end
     ::continue::
 end
 
