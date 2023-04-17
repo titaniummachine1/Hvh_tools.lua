@@ -23,46 +23,39 @@ assert(MenuLib.Version >= 1.44, "MenuLib version is too old, please update it!")
 
 --[[ Menu ]]
 --
-local menu               = MenuLib.Create("Hvh_tools", MenuFlags.AutoSize)
-menu.Style.TitleBg       = { 125, 155, 255, 255 }
-menu.Style.Outline       = true
+local menu         = MenuLib.Create("Hvh_tools", MenuFlags.AutoSize)
+menu.Style.TitleBg = { 125, 155, 255, 255 }
+menu.Style.Outline = true
 menu:AddComponent(MenuLib.Label("                 Anty Aim"), ItemFlags.FullWidth)
-local RandomToggle       = menu:AddComponent(MenuLib.Checkbox("Random Yaw", true))
-local RandomPitchToogle  = menu:AddComponent(MenuLib.Checkbox("Random Pitch", true))
-local RandomPitchtype    = menu:AddComponent(MenuLib.Checkbox("Random Pitch type", true))
-local downPitch          = menu:AddComponent(MenuLib.Checkbox("Allow Down", false))
-local Antioverlap        = menu:AddComponent(MenuLib.Checkbox("anti overlap", true))
-local atenemy            = menu:AddComponent(MenuLib.Checkbox("at enemy", true))
-local offset             = menu:AddComponent(MenuLib.Slider("offset", -180, 180, -2))
-local mdelay             = menu:AddComponent(MenuLib.Slider("Static Speed", 1, 200, 0))
-local mdelayrandommin       = menu:AddComponent(MenuLib.Slider("Speed min", 1, 199, 1))
-local mdelayrandommax       = menu:AddComponent(MenuLib.Slider("Speed max", 2, 200, 5))
---local mmVisuals          = menu:AddComponent(MenuLib.Checkbox("Indicators", false))
-local FakeLagToggle      = menu:AddComponent(MenuLib.Checkbox("Random Fake Lag", true))
+local RandomToggle      = menu:AddComponent(MenuLib.Checkbox("Jitter Yaw", true))
+local RandomPitchToogle = menu:AddComponent(MenuLib.Checkbox("Jitter Pitch", true))
+local RandomPitchtype   = menu:AddComponent(MenuLib.Checkbox("Random Pitch type", true))
+local downPitch         = menu:AddComponent(MenuLib.Checkbox("Allow Down", false))
+local Antioverlap       = menu:AddComponent(MenuLib.Checkbox("anti Overlap", true))
+local atenemy           = menu:AddComponent(MenuLib.Checkbox("At enemy", true))
+local mdelay             = menu:AddComponent(MenuLib.Slider("Static Speed", 1, 200, 10))
+--local mHeadShield        = menu:AddComponent(MenuLib.Checkbox("head Shield", true))
+local moffset_Real      = menu:AddComponent(MenuLib.Slider("offset Real", -90, 90, 0))
+local offset_fov_Real   = menu:AddComponent(MenuLib.Slider("Jitter range Real", 0, 90, 90))
+local moffset_Fake      = menu:AddComponent(MenuLib.Slider("offset Fake", -90, 90, 0))
+local offset_fov_Fake   = menu:AddComponent(MenuLib.Slider("Jitter range Fake", 0, 90, 90))
 
-local MinFakeLag         = menu:AddComponent(MenuLib.Slider("Fake Lag Min Value", 1, 329, 329))
-local MaxFakeLag         = menu:AddComponent(MenuLib.Slider("Fake Lag Max Value", 2, 330, 330))
+local FakeLagToggle     = menu:AddComponent(MenuLib.Checkbox("Random Fake Lag", true))
 
-local JitterToggle       = menu:AddComponent(MenuLib.Checkbox("(Yaw) Jitter", false))
-local JitterReal         = menu:AddComponent(MenuLib.Slider("Real Angle Jitter", -180, 180, 140))
-local JitterFake         = menu:AddComponent(MenuLib.Slider("Fake Angle Jitter", -180, 180, 170))
-
-local OffsetSpinToggle   = menu:AddComponent(MenuLib.Checkbox("(Yaw) Offset Spin", false))
-local RealOffset         = menu:AddComponent(MenuLib.Slider("Real Angle Offset", 0, 180, 65))
-
-local SemiSpinToggle     = menu:AddComponent(MenuLib.Checkbox("(Yaw) Semi Spin (broken)", false))
-local SemiSpinOffset     = menu:AddComponent(MenuLib.Slider("Spin Angle", -179, 180, 50))
-local SemiSpinRealOffset = menu:AddComponent(MenuLib.Slider("Real Angle Offset", -180, 180, 50))
-
+local MinFakeLag        = menu:AddComponent(MenuLib.Slider("Fake Lag Min Value", 1, 329, 190))
+local MaxFakeLag        = menu:AddComponent(MenuLib.Slider("Fake Lag Max Value", 2, 330, 330))
 --menu:AddComponent(MenuLib.Label("                 Resolver(soon)"), ItemFlags.FullWidth)
 --local BruteforceYaw       = menu:AddComponent(MenuLib.Checkbox("Bruteforce Yaw", false))
+tick_count                = 0
+    local delay = mdelay:GetValue()
+local pitch               = 0
+local offset_Jitter_Range_Real = offset_fov_Real:GetValue() / 2
+local offset_Jitter_Range_Fake = offset_fov_Fake:GetValue() / 2
 
-tick_count               = 0
-local pitch = 0
-
-
-
-
+local Jitter_Min_Real = -offset_Jitter_Range_Real
+local Jitter_Max_Real = offset_Jitter_Range_Real
+local Jitter_Min_Fake = -offset_Jitter_Range_Fake
+local Jitter_Max_Fake = offset_Jitter_Range_Fake
 
 local Math = lnxLib.Utils.Math
 local WPlayer = lnxLib.TF2.WPlayer
@@ -78,54 +71,55 @@ local function GetBestTarget(me)
     local target = nil
     local lastFov = math.huge
 
-    local options = {
-        AimPos      = 1,
-        AimFov      = 360
-    }
+    local options = { -- options for aim position and field of view
+    AimPos = 1,
+    AimFov = 360
+}
 
-    for _, entity in pairs(players) do
-        if not entity then goto continue end
-        if not entity:IsAlive() then goto continue end
-        if entity:GetTeamNumber() == entities.GetLocalPlayer():GetTeamNumber() then goto continue end
+    for _, entity in pairs(players) do -- iterate through all players
+        if not entity then goto continue end -- skip if entity is invalid
+        if not entity:IsAlive() then goto continue end -- skip if entity is dead
+        if entity:GetTeamNumber() == entities.GetLocalPlayer():GetTeamNumber() then goto continue end -- skip if entity is on the same team as the local player
 
         -- FOV Check
-        local player = WPlayer.FromEntity(entity)
-        local aimPos = player:GetHitboxPos(options.AimPos)
-        local angles = Math.PositionAngles(me:GetEyePos(), aimPos)
-        local fov = Math.AngleFov(angles, engine.GetViewAngles())
-        if fov > options.AimFov then goto continue end
+        local player = WPlayer.FromEntity(entity) -- convert entity to player object
+        local aimPos = player:GetHitboxPos(options.AimPos) -- get aim position from player hitbox
+        local angles = Math.PositionAngles(me:GetEyePos(), aimPos) -- get angle between local player's eye position and aim position
+        local fov = Math.AngleFov(angles, engine.GetViewAngles()) -- calculate field of view between aim angle and local player's view angle
+        if fov > options.AimFov then goto continue end -- skip if fov is larger than the maximum allowed fov
 
         -- Visiblity Check
-        if not Helpers.VisPos(entity, me:GetEyePos(), aimPos) then goto continue end
+        if not Helpers.VisPos(entity, me:GetEyePos(), aimPos) then goto continue end -- skip if aim position is not visible from local player's eye position
 
         -- Add valid target
-        if fov < lastFov then
-            lastFov = fov
-            target = { entity = entity, pos = aimPos, angles = angles, factor = fov }
+        if fov < lastFov then -- if fov is lower than the last fov found, this is a better target
+            lastFov = fov -- update last fov value
+            target = { entity = entity, pos = aimPos, angles = angles, factor = fov } -- save target information
         end
-        ::continue::
+        ::continue:: -- continue to the next player
     end
-    return target
+    return target -- return the best target found, or nil if no valid target found
 end
 
--- Returns the best target (lowest fov)
+-- Returns the closest player
 ---@param me WPlayer
 local function GetClosestTarget(pLocal, pLocalOrigin)
     local players = entities.FindByClass("CTFPlayer")
     local closestPlayer = nil
     local closestDistance = math.huge
 
+    -- Loop through all players
     for _, entity in pairs(players) do
+        -- Skip invalid players
         if not entity or not entity:IsAlive() or entity:GetTeamNumber() == pLocal:GetTeamNumber() then
             goto continue
         end
 
+        -- Calculate distance to player
         local vPlayerOrigin = entity:GetAbsOrigin()
-        local distanceX = math.abs(vPlayerOrigin.x - pLocalOrigin.x)
-        local distanceY = math.abs(vPlayerOrigin.y - pLocalOrigin.y)
-        local distanceZ = math.abs(vPlayerOrigin.z - pLocalOrigin.z)
-        local distance = math.sqrt(distanceX * distanceX + distanceY * distanceY + distanceZ * distanceZ)
+        local distance = (vPlayerOrigin - pLocalOrigin):Length()
 
+        -- Check if player is closer than the current closest player
         if distance < closestDistance and distance <= 2000 then
             closestPlayer = entity
             closestDistance = distance
@@ -137,8 +131,11 @@ local function GetClosestTarget(pLocal, pLocalOrigin)
     return closestPlayer
 end
 
-
-
+function randomizeValue(minVal, maxVal, dist)
+    local numPoints = math.floor((maxVal - minVal) / dist) + 1
+    local randomValue = math.random(-numPoints, numPoints) * dist
+    return randomValue
+  end  
 
 local function OnCreateMove(userCmd)
     local me = WPlayer.GetLocal()
@@ -148,136 +145,118 @@ local function OnCreateMove(userCmd)
     local AimbotTarget = GetBestTarget(me)
     --userCmd:SetViewAngles(currentTarget.angles:Unpack())
 
-
-
     -- replace worldtime check
-    tick_count = tick_count + 1
-    local yaw = nil
+    --tick_count = tick_count + 1
+    local yaw_real = nil
+    local yaw_Fake = nil
 
-    if atenemy:GetValue() and currentTarget and gui.GetValue("Anti Aim - Custom Yaw (Real)") ~= yaw then
+    --gui.GetValue("Anti Aim - Custom Yaw (Real)") ~= yaw_real
+    if FakeLagToggle:GetValue() == true then
+        gui.SetValue("Fake Lag Value (MS)", math.random(MinFakeLag:GetValue(), MaxFakeLag:GetValue())) -- Untested, but should work.
+    end
+
+    if atenemy:GetValue() and currentTarget and RandomToggle:GetValue() == true then
         local targetPos = currentTarget:GetAbsOrigin()
         local playerPos = entities.GetLocalPlayer():GetAbsOrigin()
         local forwardVec = engine.GetViewAngles():Forward()
         local targetAngle = math.deg(math.atan(targetPos.y - playerPos.y, targetPos.x - playerPos.x))
         local viewAngle = math.deg(math.atan(forwardVec.y, forwardVec.x))
-        local yaw = math.floor(targetAngle - viewAngle) + offset:GetValue()
+        
+        local offset_Real = moffset_Real:GetValue()
+        local offset_Fake = moffset_Fake:GetValue()
+        local pointDist   = 30
 
+        local jitter_Real = gui.SetValue("Anti Aim - Custom Yaw (Real)", randomizeValue(Jitter_Min_Fake, Jitter_Max_Fake, pointDist))
+        local yaw = math.floor(targetAngle - viewAngle) + offset_Real + jitter_Real
+        
         -- Clamp the yaw angle if it's greater than 180 or less than -180
         if yaw > 180 then
             yaw = yaw - 360
         elseif yaw < -180 then
             yaw = yaw + 360
         end
-    
+        
         gui.SetValue("Anti Aim - Custom Yaw (Real)", yaw)
+        
+        local jitter_Fake = gui.SetValue("Anti Aim - Custom Yaw (Real)", randomizeValue(Jitter_Min_Fake, Jitter_Max_Fake, pointDist))
+        yaw = math.floor(targetAngle - viewAngle) + offset_Fake - jitter_Fake
+        
+        -- Clamp the yaw angle if it's greater than 180 or less than -180
+        if yaw > 180 then
+            yaw = yaw - 360
+        elseif yaw < -180 then
+            yaw = yaw + 360
+        end
+        
+        gui.SetValue("Anti Aim - Custom Yaw (Fake)", yaw)
     end
-
-    --random speed
-    local delay = mdelay:GetValue()
-    if mdelay:GetValue() == 0 then
-        delay = math.random(mdelayrandommin:GetValue(), mdelayrandommax:GetValue())
-    end
+    if tick_count % delay == 0 then     -- delay
     --local angles = Math.PositionAngles(me:GetEyePos(), currentTarget.pos)
     if RandomToggle:GetValue() == true then
-        if not atenemy:GetValue() then
-            if tick_count % delay == 0 then -- delay
+            if not atenemy:GetValue() then
                 gui.SetValue("Anti Aim - Custom Yaw (Real)", math.random(-180, 180))
             end
-        end
-        if tick_count % delay == 0 then -- delay
-            if Antioverlap:GetValue() then
-                local YawFake = math.random(-180, 180)
-                while math.abs(YawFake - gui.GetValue("Anti Aim - Custom Yaw (Real)")) <= 37 do
-                    YawFake = math.random(-180, 180)
-                end
-                gui.SetValue("Anti Aim - Custom Yaw (Fake)", YawFake)
-            else
-                gui.SetValue("Anti Aim - Custom Yaw (Fake)", math.random(-180, 180))
+        
+        --[[if Antioverlap:GetValue() == true then
+            local YawFake = math.random(-180, 180)
+            while math.abs(YawFake - gui.GetValue("Anti Aim - Custom Yaw (Real)")) <= 37 do
+                YawFake = math.random(-180, 180)
             end
-        end
+            gui.SetValue("Anti Aim - Custom Yaw (Fake)", YawFake)
+        end]]
     end
-
     if RandomPitchToogle:GetValue() then
-        if tick_count % delay == 0 then     -- delay
-            --[[if FakeAngle == RealAngle then
-            RealAngle = somethingElse
-            end]]
-            if downPitch:GetValue() then
-                pitch = math.random(-65, 90)
-            else
-                pitch = math.random(65, 90)
-            end
-            if pitch == gui.GetValue("Anti Aim - Custom Pitch (Real)") then pitch = pitch end
-            
-            if RandomPitchtype:GetValue() then
-                local number = math.random(1, 3)
-                if downPitch == true then number = math.random(1, 5) end
-
-                if number == 1 then
-                    gui.SetValue("Anti Aim - Pitch", 1)
-                elseif number == 2 then
-                    gui.SetValue("Anti Aim - Pitch", 4)
-                elseif number == 3 then
-                    if not downPitch:GetValue() then pitch = -pitch end
-                    gui.SetValue("Anti Aim - Pitch", "Custom")
-                    gui.SetValue("Anti Aim - Custom Pitch (Real)", pitch)
-                elseif number == 4 then
-                    gui.SetValue("Anti Aim - Pitch", 2)
-                else
-                    gui.SetValue("Anti Aim - Pitch", 3)
-                end
-            else
+        --[[if FakeAngle == RealAngle then
+                RealAngle = somethingElse
+                end]]
+        if downPitch:GetValue() then
+            pitch = math.random(-65, 90)
+        else
+            pitch = math.random(65, 90)
+        end
+        if pitch == gui.GetValue("Anti Aim - Custom Pitch (Real)") then pitch = pitch end
+    
+        if RandomPitchtype:GetValue() then
+            local number = math.random(1, 3)
+            if downPitch == true then number = math.random(1, 5) end
+    
+            if number == 1 then
+                gui.SetValue("Anti Aim - Pitch", 1)
+            elseif number == 2 then
+                gui.SetValue("Anti Aim - Pitch", 4)
+            elseif number == 3 then
                 if not downPitch:GetValue() then pitch = -pitch end
                 gui.SetValue("Anti Aim - Pitch", "Custom")
                 gui.SetValue("Anti Aim - Custom Pitch (Real)", pitch)
-            end
-        end
-        --gui.SetValue("Anti Aim - Custom Pitch (Real)", math.random(-90, 90 ))s
-
-        if FakeLagToggle:GetValue() == true then
-            gui.SetValue("Fake Lag Value (MS)", math.random(MinFakeLag:GetValue(), MaxFakeLag:GetValue())) -- Untested, but should work.
-        end
-
-        if JitterToggle:GetValue() == true then
-            if gui.GetValue("Anti Aim - Custom Yaw (Real)") == JitterReal.Value then
-                gui.SetValue("Anti Aim - Custom Yaw (Real)", JitterFake.Value)
-                gui.SetValue("Anti Aim - Custom Yaw (Fake)", JitterReal.Value)
+            elseif number == 4 then
+                gui.SetValue("Anti Aim - Pitch", 2)
             else
-                gui.SetValue("Anti Aim - Custom Yaw (Real)", JitterReal.Value)
-                gui.SetValue("Anti Aim - Custom Yaw (Fake)", JitterFake.Value)
+                gui.SetValue("Anti Aim - Pitch", 3)
             end
-
-            gui.SetValue("Anti Aim - Custom Yaw (Real)", -JitterReal.Value)
-            gui.SetValue("Anti Aim - Custom Yaw (Fake)", -JitterFake.Value)
-        end
-
-        if OffsetSpinToggle:GetValue() == true then
-            gui.SetValue("Anti Aim - Custom Yaw (fake)", gui.GetValue("Anti Aim - Custom Yaw (fake)") + 1)
-
-            if (gui.GetValue("Anti Aim - Custom Yaw (fake)") == 180) then
-                gui.SetValue("Anti Aim - Custom Yaw (fake)", -180)
-            end
-
-            gui.SetValue("Anti Aim - Custom Yaw (real)", gui.GetValue("Anti Aim - Custom Yaw (fake)") - RealOffset.Value)
-        end
-
-        if SemiSpinToggle:GetValue() == true then
-            gui.SetValue("Anti Aim - Custom Yaw (fake)", gui.GetValue("Anti Aim - Custom Yaw (fake)") + 1)
-
-            if (gui.GetValue("Anti Aim - Custom Yaw (fake)") == SemiSpinOffset.Value) then
-                gui.SetValue("Anti Aim - Custom Yaw (fake)", (SemiSpinOffset.Value - 100))
-            end
-
-            gui.SetValue("Anti Aim - Custom Yaw (real)",
-                gui.GetValue("Anti Aim - Custom Yaw (fake)") - SemiSpinRealOffset.Value)
+        else
+            if not downPitch:GetValue() then pitch = -pitch end
+            gui.SetValue("Anti Aim - Pitch", "Custom")
+            gui.SetValue("Anti Aim - Custom Pitch (Real)", pitch)
         end
     end
-
-    --if BruteforceYaw:GetValue() then
-        
-    --end
-    ::continue::
 end
+::continue::
+end
+
+    --gui.SetValue("Anti Aim - Custom Pitch (Real)", math.random(-90, 90 ))s
+
+    --[[if mHeadShield:GetValue() then
+            if userCmd:GetButtons(userCmd.buttons | IN_ZOOM) then
+                offset1 = offset:GetValue() - 25
+            elseif userCmd:GetButtons(userCmd.buttons | ~IN_ZOOM) then
+                offset1 = offset:GetValue() - 7
+            end
+
+        end]]
+    --if BruteforceYaw:GetValue() then
+
+    --end
+  
 
 local myfont = draw.CreateFont("Verdana", 16, 800) -- Create a font for doDraw
 local function OnDraw()
