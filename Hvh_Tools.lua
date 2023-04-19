@@ -117,7 +117,7 @@ local function GetClosestTarget(pLocal, pLocalOrigin)
     -- Loop through all players
     for _, entity in pairs(players) do
         -- Skip invalid players
-        if not entity or not entity:IsAlive() or entity:GetTeamNumber() == pLocal:GetTeamNumber() then
+        if not entity or not entity:IsAlive() or entity:GetTeamNumber() == pLocal:GetTeamNumber() or entity:GetPropInt("m_iClass") == 2 then
             goto continue
         end
 
