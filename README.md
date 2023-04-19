@@ -9,5 +9,15 @@ tools for hvh such as anty aim and resolver in future
 
 ![image](https://user-images.githubusercontent.com/78664175/233135597-f45177ec-17f4-4048-92d9-91e7b8dd4ddd.png)
 
+# Setup
+Put all required files in your %localappdata% folder.
+including Menulib Folder from repos files.
+
+How to run Swing_prediction.lua:
+  1. Create a .bat file in the same directory as lmaobox.exe.
+  2. Right-click the .bat file and click "edit".
+  3. Put "Lmaobox file name.exe -beta" inside the file, save, and run it.
+  4. It should look similar to this: `start Lmaobox file-name.exe -beta`
+  
 [![Download Latest](https://img.shields.io/github/downloads/titaniummachine1/Hvh_tools.lua/total.svg?style=for-the-badge&logo=download&label=Download%20Latest)](https://github.com/titaniummachine1/Hvh_tools.lua/releases/latest/download/Hvh_tools.lua)
 
