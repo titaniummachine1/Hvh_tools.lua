@@ -25,7 +25,7 @@ menu.Style.Outline = true
 
 
 menu:AddComponent(MenuLib.Label("                 Misc"), ItemFlags.FullWidth)
-local mslowwalk            = menu:AddComponent(MenuLib.Slider("Speed adjsutment", 1, 200, 100))
+local mslowwalk            = menu:AddComponent(MenuLib.Slider("Speed adjsutment", 1, 200, 150))
 
 local MinFakeLag        = menu:AddComponent(MenuLib.Slider("Fake Lag Min", 1, 329, 3))
 local MaxFakeLag        = menu:AddComponent(MenuLib.Slider("Fake Lag Max", 2, 330, 2))
@@ -72,37 +72,66 @@ local currentTarget = nil
 -- Returns the best target (lowest fov)
 ---@param me WPlayer
 ---@return AimTarget? target
-local function GetBestTarget(me)
+local function GetBestTarget(me, pLocalOrigin)
     local players = entities.FindByClass("CTFPlayer")
     local target = nil
     local lastFov = math.huge
 
     local options = { -- options for aim position and field of view
-    AimPos = 1,
-    AimFov = 360
-}
+        AimPos = 1,
+        AimFov = 360
+    }
+    local closestPlayer = nil
+    local closestDistance = math.huge
+    -- Loop through all players to find closest one
+    for _, entity1 in pairs(players) do
+        if entity1 and entity1:IsAlive() and entity1:GetTeamNumber() ~= me:GetTeamNumber() and entity1:GetPropInt("m_iClass") == 2 then
+
+            local distance = (entity1:GetAbsOrigin() - me:GetAbsOrigin()):Length()
+            if distance < closestDistance and distance < 2000 then -- if player is closer than the current closest player
+                closestPlayer = entity1 -- update closest player
+                closestDistance = distance -- update closest distance
+            end
+        end
+    end
 
     for _, entity in pairs(players) do -- iterate through all players
-        if not entity then goto continue end -- skip if entity is invalid
-        if not entity:IsAlive() then goto continue end -- skip if entity is dead
-        if entity:GetTeamNumber() == entities.GetLocalPlayer():GetTeamNumber() then goto continue end -- skip if entity is on the same team as the local player
+        if entity and entity:IsAlive() and entity:GetTeamNumber() ~= me:GetTeamNumber() and entity:GetPropInt("m_iClass") == 2 then
+            local targetPos = entity:GetAbsOrigin()
+            local playerPos = me:GetAbsOrigin()
+            local forwardVec = engine.GetViewAngles():Forward()
 
-        -- FOV Check
-        local player = WPlayer.FromEntity(entity) -- convert entity to player object
-        local aimPos = player:GetHitboxPos(options.AimPos) -- get aim position from player hitbox
-        local angles = Math.PositionAngles(me:GetEyePos(), aimPos) -- get angle between local player's eye position and aim position
-        local fov = Math.AngleFov(angles, engine.GetViewAngles()) -- calculate field of view between aim angle and local player's view angle
-        if fov > options.AimFov then goto continue end -- skip if fov is larger than the maximum allowed fov
+            local targetAngle1 = math.deg(math.atan(targetPos.y - playerPos.y, targetPos.x - playerPos.x))
+            local viewAngle = math.deg(math.atan(forwardVec.y, forwardVec.x))
+            local finalAngle = targetAngle1 - viewAngle
 
-        -- Visiblity Check
-        if not Helpers.VisPos(entity, me:GetEyePos(), aimPos) then goto continue end -- skip if aim position is not visible from local player's eye position
+            -- FOV Check
+            local player = WPlayer.FromEntity(entity) -- convert entity to player object
+            local aimPos = player:GetHitboxPos(options.AimPos) -- get aim position from player hitbox
+            local angles = Math.PositionAngles(engine.GetViewAngles():Forward(), aimPos) -- get angle between local player's eye position and aim position
+            local fov = Math.AngleFov(angles, engine.GetViewAngles()) -- calculate field of view between aim angle and local player's view angle
+            local entityOrigin = entity:GetAbsOrigin()
+      
 
-        -- Add valid target
-        if fov < lastFov then -- if fov is lower than the last fov found, this is a better target
-            lastFov = fov -- update last fov value
-            target = { entity = entity, pos = aimPos, angles = angles, factor = fov } -- save target information
+            
+
+            local function bestFov()
+                if fov < lastFov then -- if fov is lower than the last fov found, this is a better target
+                    lastFov = fov -- update last fov value
+                    target = { entity = entity, pos = aimPos, angles = angles, factor = fov } -- save target information
+                end
+            end
+            
+            if not Helpers.VisPos(entityOrigin, me:GetEyePos(), aimPos) then -- Visibility check
+                bestFov()
+            elseif closestDistance <= 350 then -- player is within 250 units
+                target = closestPlayer
+            else -- player is farther than 250 units
+                bestFov()
+            end
+
         end
-        ::continue:: -- continue to the next player
+    ::continue::
     end
     return target -- return the best target found, or nil if no valid target found
 end
@@ -120,9 +149,9 @@ local function GetClosestTarget(pLocal, pLocalOrigin)
         if not entity or not entity:IsAlive() or entity:GetTeamNumber() == pLocal:GetTeamNumber() then
             goto continue
         end
-        if entity:GetPropInt("m_iClass") == 2 then
+        --[[if entity:GetPropInt("m_iClass") == 2 then
             goto continue
-        end
+        end]]
         -- Calculate distance to player
         local vPlayerOrigin = entity:GetAbsOrigin()
         local distance = (vPlayerOrigin - pLocalOrigin):Length()
@@ -181,8 +210,9 @@ end
 
 local function updateYaw(Jitter_Real, Jitter_Fake)
     if atenemy:GetValue() and currentTarget then
-        
-        local targetPos = currentTarget:GetAbsOrigin()
+        local targetPos = currentTarget.entity:GetAbsOrigin()
+    if targetPos == nil then goto continue end
+    
         local playerPos = entities.GetLocalPlayer():GetAbsOrigin()
         local forwardVec = engine.GetViewAngles():Forward()
 
@@ -214,12 +244,14 @@ local function updateYaw(Jitter_Real, Jitter_Fake)
         yaw = math.floor(yaw)
         gui.SetValue("Anti Aim - Custom Yaw (Real)", yaw)
     end
+    ::continue::
 end
 
 
 local function OnCreateMove(userCmd)
     local me = WPlayer.GetLocal()
     local pLocal = entities.GetLocalPlayer()
+    local pLocalOrigin = pLocal:GetAbsOrigin() + Vector3(0, 0, 75)
     if not pLocal then return end
     if not pLocal:IsAlive() then return end
     
@@ -232,7 +264,7 @@ local function OnCreateMove(userCmd)
     
     Jitter_Range_Real1 = Jitter_Range_Real:GetValue() / 2
 
-    currentTarget = GetClosestTarget(me, me:GetAbsOrigin()) -- Get the best target
+    currentTarget = GetBestTarget(me, pLocalOrigin) --GetClosestTarget(me, me:GetAbsOrigin()) -- Get the best target
     local pWeapon = me:GetPropEntity("m_hActiveWeapon")
     local AimbotTarget = GetBestTarget(me)
     --userCmd:SetViewAngles(currentTarget.angles:Unpack())
