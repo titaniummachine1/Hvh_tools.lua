@@ -13,7 +13,7 @@ tools for hvh such as anty aim and resolver in future
 Put all required files in your %localappdata% folder.
 including Menulib Folder from repos files.
 
-How to run Swing_prediction.lua:
+How to run Script:
   1. Create a .bat file in the same directory as lmaobox.exe.
   2. Right-click the .bat file and click "edit".
   3. Put "Lmaobox file name.exe -beta" inside the file, save, and run it.
