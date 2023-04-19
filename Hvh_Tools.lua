@@ -219,11 +219,10 @@ end
 
 local function OnCreateMove(userCmd)
     local me = WPlayer.GetLocal()
-    if not me then
-        --print(jitter_Real_Last)
-        return
-    end
-
+    local pLocal = entities.GetLocalPlayer()
+    if not pLocal then return end
+    if not pLocal:IsAlive() then return end
+    
     if mslowwalk:GetValue() ~= 100 then
         local slowwalk = mslowwalk:GetValue() * 0.01
         userCmd:SetForwardMove(userCmd:GetForwardMove()*slowwalk)
@@ -231,7 +230,7 @@ local function OnCreateMove(userCmd)
         userCmd:SetUpMove(userCmd:GetUpMove()*slowwalk)
     end
     
-    local Jitter_Range_Real1 = Jitter_Range_Real:GetValue() / 2
+    Jitter_Range_Real1 = Jitter_Range_Real:GetValue() / 2
 
     currentTarget = GetClosestTarget(me, me:GetAbsOrigin()) -- Get the best target
     local pWeapon = me:GetPropEntity("m_hActiveWeapon")
@@ -247,7 +246,7 @@ local function OnCreateMove(userCmd)
 
     --local angles = Math.PositionAngles(me:GetEyePos(), currentTarget.pos)
     if RandomToggle:GetValue() == true then
-        Head_size = mHeadSize:GetValue()
+        local Head_size = mHeadSize:GetValue()
         Jitter_Range_Real1 = Jitter_Range_Real:GetValue() / 2
 
         Jitter_Min_Real = -Jitter_Range_Real1
@@ -268,7 +267,7 @@ local function OnCreateMove(userCmd)
 
                 jitter_Real_Last = jitter_Real
             else
-                gui.SetValue("Anti Aim - Custom Yaw (Real)", math.random(-180, 180))
+                gui.SetValue("Anti Aim - Custom Yaw (Real)", randomizeValue(-180, 180, Head_size))
             end
         
         --[[if Antioverlap:GetValue() == true then
