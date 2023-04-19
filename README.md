@@ -3,7 +3,7 @@
 
 
 # Hvh_tools.lua
-tools for hvh such as anty aim and resolver in future
+tools for hvh such as anti aim and resolver in future
 
 ![image](https://user-images.githubusercontent.com/78664175/233135282-c3a2bfe6-dd69-47f0-9d54-441a2597c34e.png)
 
