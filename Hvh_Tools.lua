@@ -117,10 +117,12 @@ local function GetClosestTarget(pLocal, pLocalOrigin)
     -- Loop through all players
     for _, entity in pairs(players) do
         -- Skip invalid players
-        if not entity or not entity:IsAlive() or entity:GetTeamNumber() == pLocal:GetTeamNumber() or entity:GetPropInt("m_iClass") == 2 then
+        if not entity or not entity:IsAlive() or entity:GetTeamNumber() == pLocal:GetTeamNumber() then
             goto continue
         end
-
+        if entity:GetPropInt("m_iClass") == 2 then
+            goto continue
+        end
         -- Calculate distance to player
         local vPlayerOrigin = entity:GetAbsOrigin()
         local distance = (vPlayerOrigin - pLocalOrigin):Length()
@@ -217,7 +219,10 @@ end
 
 local function OnCreateMove(userCmd)
     local me = WPlayer.GetLocal()
-    if not me then return end
+    if not me then
+        --print(jitter_Real_Last)
+        return
+    end
 
     if mslowwalk:GetValue() ~= 100 then
         local slowwalk = mslowwalk:GetValue() * 0.01
