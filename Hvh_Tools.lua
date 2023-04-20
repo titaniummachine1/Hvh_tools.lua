@@ -242,8 +242,12 @@ local function updateYaw(Jitter_Real, Jitter_Fake)
         local viewAngle = math.deg(math.atan(forwardVec.y, forwardVec.x))
         TargetAngle = math.floor(targetAngle - viewAngle)
 
-        local yaw = TargetAngle + Jitter_Fake
-        
+        local yaw
+        if not atenemy:GetValue() then
+            yaw = Jitter_Fake
+        else
+            yaw = TargetAngle + Jitter_Fake
+        end
         -- Clamp the yaw angle if it's greater than 180 or less than -180
         if yaw > 180 then
             yaw = yaw - 360
@@ -257,8 +261,12 @@ local function updateYaw(Jitter_Real, Jitter_Fake)
         
         gui.SetValue("Anti Aim - Custom Yaw (Fake)", yaw)
 
-        yaw = TargetAngle - jitter_Real
-        
+    
+        if not atenemy then
+            yaw = jitter_Real
+        else
+            yaw = TargetAngle - jitter_Real
+        end
         -- Clamp the yaw angle if it's greater than 180 or less than -180
         if yaw > 180 then
             yaw = yaw - 360
@@ -419,8 +427,11 @@ local function OnDraw()
         local yaw
 
         if targetAngle ~= nil then
-            yaw = targetAngle + Jitter_Real1
-
+            if not atenemy then
+                yaw = Jitter_Real1
+            else
+                yaw = targetAngle + Jitter_Real1
+            end
             
             if targetAngle then
                 direction = Vector3(math.cos(math.rad(yaw)), math.sin(math.rad(yaw)), 0)
@@ -448,7 +459,12 @@ local function OnDraw()
         end
         
         if targetAngle ~= nil then
-            yaw = targetAngle + Jitter_Fake1
+            
+            if not atenemy then
+                yaw = Jitter_Fake1
+            else
+                yaw = targetAngle + Jitter_Fake1
+            end
 
             if targetAngle then
                 direction = Vector3(math.cos(math.rad(yaw)), math.sin(math.rad(yaw)), 0)
