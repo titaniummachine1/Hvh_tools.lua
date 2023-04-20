@@ -313,6 +313,9 @@ local function OnCreateMove(userCmd)
     Jitter_Range_Real1 = Jitter_Range_Real:GetValue() / 2
     local currentTarget1 = GetBestTarget(me, pLocalOrigin) --GetClosestTarget(me, me:GetAbsOrigin()) -- Get the best target
     currentTarget = currentTarget1.entity
+        if currentTarget == nil then
+            currentTarget = currentTarget1
+        end
     local pWeapon = me:GetPropEntity("m_hActiveWeapon")
     local AimbotTarget = GetBestTarget(me)
     --userCmd:SetViewAngles(currentTarget.angles:Unpack())
