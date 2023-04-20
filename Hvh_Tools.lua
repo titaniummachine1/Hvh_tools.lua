@@ -24,26 +24,30 @@ menu.Style.TitleBg = { 125, 155, 255, 255 }
 menu.Style.Outline = true
 
 
-menu:AddComponent(MenuLib.Label("                 Misc"), ItemFlags.FullWidth)
-local mslowwalk            = menu:AddComponent(MenuLib.Slider("Speed adjsutment", 1, 200, 150))
+menu:AddComponent(MenuLib.Label("                     Misc"), ItemFlags.FullWidth)
+local mslowwalk            = menu:AddComponent(MenuLib.Slider("Walk Speed", 1, 200, 150))
 
 local MinFakeLag        = menu:AddComponent(MenuLib.Slider("Fake Lag Min", 1, 329, 3))
 local MaxFakeLag        = menu:AddComponent(MenuLib.Slider("Fake Lag Max", 2, 330, 2))
 
-menu:AddComponent(MenuLib.Label("                 Anty Aim"), ItemFlags.FullWidth)
+local mLegJitter        = menu:AddComponent(MenuLib.Checkbox("Leg Jitter", true))
+local mlgstrengh        = menu:AddComponent(MenuLib.Slider("Leg Jitter Strengh", 1, 145, 9))
+
+menu:AddComponent(MenuLib.Label("                  Anty Aim"), ItemFlags.FullWidth)
 local mmVisuals         = menu:AddComponent(MenuLib.Checkbox("indicators", true))
 local mmIndicator       = menu:AddComponent(MenuLib.Slider("Indicator Size", 10, 100, 50))
 
 local RandomPitchtype   = menu:AddComponent(MenuLib.Checkbox("Jitter Pitch type", true))
 local RandomToggle      = menu:AddComponent(MenuLib.Checkbox("Jitter Yaw", true))
+
+local mDelay            = menu:AddComponent(MenuLib.Slider("jitter Speed", 1, 66, 1))
 --local Antioverlap       = menu:AddComponent(MenuLib.Checkbox("Anti Overlap", true))
 local msafe_angles      = menu:AddComponent(MenuLib.Checkbox("Safe Angles", true))
 local downPitch         = menu:AddComponent(MenuLib.Checkbox("Allow Down", false))
 local atenemy           = menu:AddComponent(MenuLib.Checkbox("At enemy", true))
 
---local mdelay            = menu:AddComponent(MenuLib.Slider("Jitter Speed", 1, 100, 1))
-local mHeadSize           = menu:AddComponent(MenuLib.Slider("Angle Distance", 1, 60, 30))
-local Jitter_Range_Real   = menu:AddComponent(MenuLib.Slider("Jitter range Real", 30, 180, 180))
+local mHeadSize          = menu:AddComponent(MenuLib.Slider("Angle Distance", 1, 60, 30))
+local Jitter_Range_Real  = menu:AddComponent(MenuLib.Slider("Jitter Range", 30, 180, 100))
 
 
 --local mHeadShield        = menu:AddComponent(MenuLib.Checkbox("head Shield", true))
@@ -58,10 +62,10 @@ local yaw_Fake = nil
 local offset = 0
 local jitter_Real = 0
 local jitter_Fake = 0
-local Jitter_Range_Real1 = Jitter_Range_Real:GetValue() / 2
 
-local Jitter_Min_Real = -Jitter_Range_Real1
-local Jitter_Max_Real = Jitter_Range_Real1
+local TargetAngle
+
+local Jitter_Range_Real1 = Jitter_Range_Real:GetValue() / 2
 
 local Math = lnxLib.Utils.Math
 local WPlayer = lnxLib.TF2.WPlayer
@@ -112,9 +116,6 @@ local function GetBestTarget(me, pLocalOrigin)
             local fov = Math.AngleFov(angles, engine.GetViewAngles()) -- calculate field of view between aim angle and local player's view angle
             local entityOrigin = entity:GetAbsOrigin()
       
-
-            
-
             local function bestFov()
                 if fov < lastFov then -- if fov is lower than the last fov found, this is a better target
                     lastFov = fov -- update last fov value
@@ -136,51 +137,26 @@ local function GetBestTarget(me, pLocalOrigin)
     return target -- return the best target found, or nil if no valid target found
 end
 
--- Returns the closest player
----@param me WPlayer
-local function GetClosestTarget(pLocal, pLocalOrigin)
-    local players = entities.FindByClass("CTFPlayer")
-    local closestPlayer = nil
-    local closestDistance = math.huge
-
-    -- Loop through all players
-    for _, entity in pairs(players) do
-        -- Skip invalid players
-        if not entity or not entity:IsAlive() or entity:GetTeamNumber() == pLocal:GetTeamNumber() then
-            goto continue
-        end
-        --[[if entity:GetPropInt("m_iClass") == 2 then
-            goto continue
-        end]]
-        -- Calculate distance to player
-        local vPlayerOrigin = entity:GetAbsOrigin()
-        local distance = (vPlayerOrigin - pLocalOrigin):Length()
-
-        -- Check if player is closer than the current closest player
-        if distance < closestDistance and distance <= 2000 then
-            closestPlayer = entity
-            closestDistance = distance
-        end
-
-        ::continue::
-    end
-
-    return closestPlayer
-end
-
 local angleTable = {}
+
+-- initialize angleTable and evaluationTable
+local evaluationTable = {}
 
 function createAngleTable(Jitter_Min_Real, Jitter_Max_Real, dist)
     local numPoints = math.floor((Jitter_Max_Real - Jitter_Min_Real) / dist) + 1
     local stepSize = (Jitter_Max_Real - Jitter_Min_Real) / (numPoints - 1)
     for i = 1, numPoints do
         local angle = Jitter_Min_Real + (i - 1) * stepSize
+        local evaluation = 1 -- initialize evaluation to 1
         if msafe_angles:GetValue() then
-            if angle ~= 90 and angle ~= -90 and angle ~= 0 then
+            if angle ~= 90 and angle ~= -90 and angle ~= 0 and angle ~= 180 then
                 table.insert(angleTable, angle)
+                table.insert(evaluationTable, evaluation)
             end
         else
+            evaluation = 0
             table.insert(angleTable, angle)
+            table.insert(evaluationTable, evaluation)
         end
     end
 end
@@ -191,14 +167,59 @@ function randomizeValue(Jitter_Min_Real, Jitter_Max_Real, dist)
         createAngleTable(Jitter_Min_Real, Jitter_Max_Real, dist)
     end
 
-    local numPoints = #angleTable
-    local randomIndex = math.random(1, numPoints)
-    local randomValue = angleTable[randomIndex]
-    -- remove the randomly selected angle from the table and adjust the table
-    table.remove(angleTable, randomIndex)
+    -- update evaluationTable by 0.1 for each angle every iteration
+    for i = 1, #evaluationTable do
+        if evaluationTable[i] > 1 then
+            evaluationTable[i] = evaluationTable[i] - 0.1
+        elseif evaluationTable[i] < 1 then
+            evaluationTable[i] = evaluationTable[i] + 0.1
+        end
+    end
+
+ 
+    
+
+    -- sort angleTable by evaluationTable in descending order
+    local sortedTable = {}
+    for i = 1, #angleTable do
+        sortedTable[i] = {angle = angleTable[i], evaluation = evaluationTable[i]}
+    end
+    table.sort(sortedTable, function(a, b) return a.evaluation > b.evaluation end)
+
+    -- find the highest rated angles and randomize between them
+    local highestRated = {}
+    local highestRating = sortedTable[1].evaluation
+    for i = 1, #sortedTable do
+        if sortedTable[i].evaluation == highestRating then
+            table.insert(highestRated, sortedTable[i].angle)
+        else
+            break
+        end
+    end
+
+    local randomIndex = math.random(1, #highestRated)
+    local randomValue = highestRated[randomIndex]
+
+    -- update the evaluation of the randomly selected angle to 2.0
+    for i = 1, #angleTable do
+        if angleTable[i] == randomValue then
+            evaluationTable[i] = 1.1
+            break
+        end
+    end
+
+    -- remove the randomly selected angle from angleTable and evaluationTable
+    for i = 1, #angleTable do
+        if angleTable[i] == randomValue then
+            table.remove(angleTable, i)
+            table.remove(evaluationTable, i)
+            break
+        end
+    end
 
     return randomValue
 end
+
 
 
 
@@ -210,7 +231,7 @@ end
 
 local function updateYaw(Jitter_Real, Jitter_Fake)
     if atenemy:GetValue() and currentTarget then
-        local targetPos = currentTarget.entity:GetAbsOrigin()
+        local targetPos = currentTarget:GetAbsOrigin()
     if targetPos == nil then goto continue end
     
         local playerPos = entities.GetLocalPlayer():GetAbsOrigin()
@@ -218,7 +239,7 @@ local function updateYaw(Jitter_Real, Jitter_Fake)
 
         targetAngle = math.deg(math.atan(targetPos.y - playerPos.y, targetPos.x - playerPos.x))
         local viewAngle = math.deg(math.atan(forwardVec.y, forwardVec.x))
-        local TargetAngle = math.floor(targetAngle - viewAngle)
+        TargetAngle = math.floor(targetAngle - viewAngle)
 
         local yaw = TargetAngle + Jitter_Fake
         
@@ -229,7 +250,10 @@ local function updateYaw(Jitter_Real, Jitter_Fake)
             yaw = yaw + 360
         end
 
+        Jitter_Fake1 = yaw - TargetAngle
+
         yaw = math.floor(yaw)
+        
         gui.SetValue("Anti Aim - Custom Yaw (Fake)", yaw)
 
         yaw = TargetAngle - jitter_Real
@@ -240,31 +264,55 @@ local function updateYaw(Jitter_Real, Jitter_Fake)
         elseif yaw < -180 then
             yaw = yaw + 360
         end
-        
+        Jitter_Real1 = yaw - TargetAngle
         yaw = math.floor(yaw)
         gui.SetValue("Anti Aim - Custom Yaw (Real)", yaw)
     end
     ::continue::
 end
 
-
+-- OnTickUpdate
 local function OnCreateMove(userCmd)
     local me = WPlayer.GetLocal()
     local pLocal = entities.GetLocalPlayer()
-    local pLocalOrigin = pLocal:GetAbsOrigin() + Vector3(0, 0, 75)
     if not pLocal then return end
     if not pLocal:IsAlive() then return end
+
+    local pLocalOrigin = pLocal:GetAbsOrigin() + Vector3(0, 0, 75)
+
+    local Jitter_Min_Real = -Jitter_Range_Real1
+    local Jitter_Max_Real = Jitter_Range_Real1
     
+    --pLocal:GetHitboxes()
+
     if mslowwalk:GetValue() ~= 100 then
         local slowwalk = mslowwalk:GetValue() * 0.01
         userCmd:SetForwardMove(userCmd:GetForwardMove()*slowwalk)
         userCmd:SetSideMove(userCmd:GetSideMove()*slowwalk)
         userCmd:SetUpMove(userCmd:GetUpMove()*slowwalk)
     end
-    
-    Jitter_Range_Real1 = Jitter_Range_Real:GetValue() / 2
+    if atenemy:GetValue() then
+        if userCmd.command_number % mDelay:GetValue() == 0 then                         -- Check if the command number is even. (Potentially inconsistent, but it works).
+            updateYaw(jitter_Real, jitter_Fake)                                      -- Cycle between moving left and right   
+        end
+        
+    end
+    --[[ Leg Jitter ]]-- (Messes with certain idle animations. See scout with mad milk / spycrab for a good example)
+     if mLegJitter:GetValue() == true then                                -- If Leg Jitter is enabled,
+        local vVelocity  = pLocal:EstimateAbsVelocity()
+        if (userCmd.forwardmove == 0) and (userCmd.sidemove == 0)              -- Check if we are pressing WASD
+                                       and (vVelocity:Length2D() < 10) then  -- Check if we not currently moving 
+            if userCmd.command_number % 2 == 0 then                         -- Check if the command number is even. (Potentially inconsistent, but it works).
+                userCmd:SetSideMove(mlgstrengh:GetValue())                                      -- Cycle between moving left and right
+            else
+                userCmd:SetSideMove(-mlgstrengh:GetValue())
+            end
+        end
+    end
 
-    currentTarget = GetBestTarget(me, pLocalOrigin) --GetClosestTarget(me, me:GetAbsOrigin()) -- Get the best target
+    Jitter_Range_Real1 = Jitter_Range_Real:GetValue() / 2
+    local currentTarget1 = GetBestTarget(me, pLocalOrigin) --GetClosestTarget(me, me:GetAbsOrigin()) -- Get the best target
+    currentTarget = currentTarget1.entity
     local pWeapon = me:GetPropEntity("m_hActiveWeapon")
     local AimbotTarget = GetBestTarget(me)
     --userCmd:SetViewAngles(currentTarget.angles:Unpack())
@@ -284,8 +332,8 @@ local function OnCreateMove(userCmd)
         Jitter_Min_Real = -Jitter_Range_Real1
         Jitter_Max_Real = Jitter_Range_Real1
             if atenemy:GetValue() then
-                    jitter_Real = randomizeValue(Jitter_Min_Real, Jitter_Max_Real, Head_size)
-
+                jitter_Real = randomizeValue(Jitter_Min_Real, Jitter_Max_Real, Head_size)
+                jitter_real1 = jitter_Real
                 local Number1 = math.random(1, 3)
                 jitter_Fake = 0
 
@@ -311,9 +359,7 @@ local function OnCreateMove(userCmd)
         end]]
     end
 
-    if atenemy:GetValue() then
-        updateYaw(jitter_Real, jitter_Fake)
-    end
+
 
         if RandomPitchtype:GetValue() then
 
@@ -370,13 +416,14 @@ local function OnDraw()
         local yaw
 
         if targetAngle ~= nil then
-            yaw = targetAngle + jitter_Real
+            yaw = targetAngle + Jitter_Real1
 
+            
             if targetAngle and atenemy:GetValue() then
                 direction = Vector3(math.cos(math.rad(yaw)), math.sin(math.rad(yaw)), 0)
             end
         else
-            yaw = gui.GetValue("Anti Aim - Custom Yaw (Real)")
+            yaw = targetAngle + gui.GetValue("Anti Aim - Custom Yaw (Real)")
 
             if targetAngle and atenemy:GetValue() then
                 direction = Vector3(math.cos(math.rad(yaw)), math.sin(math.rad(yaw)), 0)
@@ -398,7 +445,7 @@ local function OnDraw()
         end
         
         if targetAngle ~= nil then
-            yaw = targetAngle + jitter_Fake
+            yaw = targetAngle + Jitter_Fake1
 
             if targetAngle and atenemy:GetValue() then
                 direction = Vector3(math.cos(math.rad(yaw)), math.sin(math.rad(yaw)), 0)
@@ -407,11 +454,11 @@ local function OnDraw()
             yaw = gui.GetValue("Anti Aim - Custom Yaw (Real)")
 
             if targetAngle and atenemy:GetValue() then
-                direction = Vector3(math.cos(math.rad(yaw)), math.sin(math.rad(yaw)), 0)
+                direction = Vector3(math.cos(math.rad(yaw)), math.sin(math.rad(yaw)), 0) + yaw_public_real
             end
         end
 
-        -- Real
+        -- fake
         draw.Color( 255, 0, 0, 255 )
         screenPos = client.WorldToScreen(center)
         if screenPos ~= nil then
@@ -421,7 +468,6 @@ local function OnDraw()
                 draw.Line(screenPos[1], screenPos[2], screenPos1[1], screenPos1[2])
             end
         end
-
 end
 
 --[[ Remove the menu when unloaded ]]
