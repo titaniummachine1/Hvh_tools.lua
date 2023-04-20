@@ -62,6 +62,7 @@ local yaw_Fake = nil
 local offset = 0
 local jitter_Real = 0
 local jitter_Fake = 0
+local players = entities.FindByClass("CTFPlayer")
 
 local TargetAngle
 
@@ -77,7 +78,7 @@ local currentTarget = nil
 ---@param me WPlayer
 ---@return AimTarget? target
 local function GetBestTarget(me, pLocalOrigin)
-    local players = entities.FindByClass("CTFPlayer")
+    players = entities.FindByClass("CTFPlayer")
     local target = nil
     local lastFov = math.huge
 
@@ -125,7 +126,7 @@ local function GetBestTarget(me, pLocalOrigin)
             
             if not Helpers.VisPos(entityOrigin, me:GetEyePos(), aimPos) then -- Visibility check
                 bestFov()
-            elseif closestDistance <= 350 then -- player is within 250 units
+            elseif closestDistance <= 250 then -- player is within 250 units
                 target = closestPlayer
             else -- player is farther than 250 units
                 bestFov()
@@ -231,7 +232,7 @@ end
 
 local function updateYaw(Jitter_Real, Jitter_Fake)
     if atenemy:GetValue() and currentTarget then
-        local targetPos = currentTarget:GetAbsOrigin()
+        local targetPos = currentTarget
     if targetPos == nil then goto continue end
     
         local playerPos = entities.GetLocalPlayer():GetAbsOrigin()
@@ -312,9 +313,10 @@ local function OnCreateMove(userCmd)
 
     Jitter_Range_Real1 = Jitter_Range_Real:GetValue() / 2
     local currentTarget1 = GetBestTarget(me, pLocalOrigin) --GetClosestTarget(me, me:GetAbsOrigin()) -- Get the best target
-    currentTarget = currentTarget1.entity
-        if currentTarget == nil then
-            currentTarget = currentTarget1
+        if #players > 0 then
+            currentTarget = currentTarget1.pos
+        else
+            currentTarget = pLocal:GetAbsOrigin()
         end
     local pWeapon = me:GetPropEntity("m_hActiveWeapon")
     local AimbotTarget = GetBestTarget(me)
@@ -337,16 +339,11 @@ local function OnCreateMove(userCmd)
             if atenemy:GetValue() then
                 jitter_Real = randomizeValue(Jitter_Min_Real, Jitter_Max_Real, Head_size)
                 jitter_real1 = jitter_Real
-                local Number1 = math.random(1, 3)
-                jitter_Fake = 0
 
-                if Number1 == 1 then
-                    jitter_Fake = 90
-                elseif Number1 == 2 then
-                    jitter_Fake = -90
-                elseif Number1 == 3 then
-                    jitter_Fake = 0
-                end
+                local Number1 = math.random(1, 3)
+                jitter_Fake = 180
+                jitter_Fake = jitter_Fake + Number1 * 90
+                
 
                 jitter_Real_Last = jitter_Real
             else
@@ -403,14 +400,13 @@ local myfont = draw.CreateFont("Verdana", 16, 800) -- Create a font for doDraw
 local direction = Vector3(0, 0, 0)
 
 local function OnDraw()
-
-    if engine.Con_IsVisible() or engine.IsGameUIVisible() then
+    if not mmVisuals:GetValue() then return end -- if not enabled return
+    if engine.Con_IsVisible() or engine.IsGameUIVisible() then -- if in menus return
         return
     end
-    if not mmVisuals:GetValue() then return end
 
     local pLocal = entities.GetLocalPlayer()
-    if not pLocal then return end
+    if not pLocal:IsAlive() then return end -- if not alive return
     
     draw.SetFont( myfont )
         
@@ -426,7 +422,7 @@ local function OnDraw()
                 direction = Vector3(math.cos(math.rad(yaw)), math.sin(math.rad(yaw)), 0)
             end
         else
-            yaw = targetAngle + gui.GetValue("Anti Aim - Custom Yaw (Real)")
+            yaw = gui.GetValue("Anti Aim - Custom Yaw (Real)")
 
             if targetAngle and atenemy:GetValue() then
                 direction = Vector3(math.cos(math.rad(yaw)), math.sin(math.rad(yaw)), 0)
