@@ -324,7 +324,7 @@ local function OnCreateMove(userCmd)
 
     Jitter_Range_Real1 = Jitter_Range_Real:GetValue() / 2
     local currentTarget1 = GetBestTarget(me, pLocalOrigin) --GetClosestTarget(me, me:GetAbsOrigin()) -- Get the best target
-        if #players > 1 and currentTarget1 then
+        if #players > 0 and currentTarget1 then
             currentTarget = currentTarget1.entity:GetAbsOrigin()
         else
             currentTarget = pLocal:GetAbsOrigin()
