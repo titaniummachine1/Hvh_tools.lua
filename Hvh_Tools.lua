@@ -231,7 +231,7 @@ end
         end]]
 
 local function updateYaw(Jitter_Real, Jitter_Fake)
-    if atenemy:GetValue() and currentTarget then
+    if currentTarget then
         local targetPos = currentTarget
     if targetPos == nil then goto continue end
     
@@ -292,11 +292,9 @@ local function OnCreateMove(userCmd)
         userCmd:SetSideMove(userCmd:GetSideMove()*slowwalk)
         userCmd:SetUpMove(userCmd:GetUpMove()*slowwalk)
     end
-    if atenemy:GetValue() then
-        if userCmd.command_number % mDelay:GetValue() == 0 then                         -- Check if the command number is even. (Potentially inconsistent, but it works).
-            updateYaw(jitter_Real, jitter_Fake)                                      -- Cycle between moving left and right   
-        end
-        
+    
+    if userCmd.command_number % mDelay:GetValue() == 0 then                         -- Check if the command number is even. (Potentially inconsistent, but it works).
+        updateYaw(jitter_Real, jitter_Fake)                                      -- Cycle between moving left and right   
     end
     --[[ Leg Jitter ]]-- (Messes with certain idle animations. See scout with mad milk / spycrab for a good example)
      if mLegJitter:GetValue() == true then                                -- If Leg Jitter is enabled,
@@ -343,13 +341,19 @@ local function OnCreateMove(userCmd)
                 local Number1 = math.random(1, 3)
                 jitter_Fake = 180
                 jitter_Fake = jitter_Fake + Number1 * 90
+               
+            else
+                jitter_Real = randomizeValue(Jitter_Min_Real * 2, Jitter_Max_Real * 2, Head_size)
+                jitter_real1 = jitter_Real
+                --gui.SetValue("Anti Aim - Custom Yaw (Real)", jitter_Real)
                 
 
-                jitter_Real_Last = jitter_Real
-            else
-                gui.SetValue("Anti Aim - Custom Yaw (Real)", randomizeValue(-180, 180, Head_size))
+                local Number1 = math.random(1, 4)
+                jitter_Fake = 180
+                jitter_Fake = jitter_Fake + Number1 * 90
+                
             end
-        
+            jitter_Real_Last = jitter_Real
         --[[if Antioverlap:GetValue() == true then
             local YawFake = math.random(-180, 180)
             while math.abs(YawFake - gui.GetValue("Anti Aim - Custom Yaw (Real)")) <= 37 do
@@ -418,13 +422,13 @@ local function OnDraw()
             yaw = targetAngle + Jitter_Real1
 
             
-            if targetAngle and atenemy:GetValue() then
+            if targetAngle then
                 direction = Vector3(math.cos(math.rad(yaw)), math.sin(math.rad(yaw)), 0)
             end
         else
             yaw = gui.GetValue("Anti Aim - Custom Yaw (Real)")
 
-            if targetAngle and atenemy:GetValue() then
+            if targetAngle then
                 direction = Vector3(math.cos(math.rad(yaw)), math.sin(math.rad(yaw)), 0)
             end
         end
@@ -446,13 +450,13 @@ local function OnDraw()
         if targetAngle ~= nil then
             yaw = targetAngle + Jitter_Fake1
 
-            if targetAngle and atenemy:GetValue() then
+            if targetAngle then
                 direction = Vector3(math.cos(math.rad(yaw)), math.sin(math.rad(yaw)), 0)
             end
         else
             yaw = gui.GetValue("Anti Aim - Custom Yaw (Real)")
 
-            if targetAngle and atenemy:GetValue() then
+            if targetAngle then
                 direction = Vector3(math.cos(math.rad(yaw)), math.sin(math.rad(yaw)), 0) + yaw_public_real
             end
         end
