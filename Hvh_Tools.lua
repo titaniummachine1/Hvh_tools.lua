@@ -82,7 +82,7 @@ local currentTarget = nil
 -- Returns the best target (lowest fov)
 ---@param me WPlayer
 ---@return AimTarget? target
-local function GetBestTarget(me, pLocalOrigin)
+local function GetBestTarget(me, pLocalOrigin, pLocal)
     players = entities.FindByClass("CTFPlayer")
     local target = nil
     local lastFov = math.huge
@@ -93,9 +93,12 @@ local function GetBestTarget(me, pLocalOrigin)
     }
     local closestPlayer = nil
     local closestDistance = math.huge
+    local ValidTarget
     -- Loop through all players to find closest one
     for _, entity1 in pairs(players) do
-        if entity1 and entity1:IsAlive() and entity1:GetTeamNumber() ~= me:GetTeamNumber() and entity1:GetPropInt("m_iClass") == 2 or entity1:GetPropInt("m_iClass") == 8 then
+        if entity1 == pLocal then goto continue end
+        ValidTarget = entity1 and entity1:IsAlive() and entity1:GetTeamNumber() ~= me:GetTeamNumber()
+        if ValidTarget and entity1:GetPropInt("m_iClass") == 2 or ValidTarget and entity1:GetPropInt("m_iClass") == 8 then
 
             local distance = (entity1:GetAbsOrigin() - me:GetAbsOrigin()):Length()
             if distance < closestDistance and distance < 2000 then -- if player is closer than the current closest player
@@ -103,10 +106,13 @@ local function GetBestTarget(me, pLocalOrigin)
                 closestDistance = distance -- update closest distance
             end
         end
+        ::continue::
     end
 
     for _, entity in pairs(players) do -- iterate through all players
-        if entity and entity:IsAlive() and entity:GetTeamNumber() ~= me:GetTeamNumber() and entity:GetPropInt("m_iClass") == 2 then
+        if entity == pLocal then goto continue end
+        ValidTarget = entity and entity:IsAlive() and entity:GetTeamNumber() ~= me:GetTeamNumber()
+        if ValidTarget and entity:GetPropInt("m_iClass") == 2 or ValidTarget and entity:GetPropInt("m_iClass") == 8 then
             local targetPos = entity:GetAbsOrigin()
             local playerPos = me:GetAbsOrigin()
             local forwardVec = engine.GetViewAngles():Forward()
