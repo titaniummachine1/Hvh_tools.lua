@@ -40,7 +40,7 @@ local mmIndicator       = menu:AddComponent(MenuLib.Slider("Indicator Size", 10,
 
 menu:AddComponent(MenuLib.Label("                  [ Safety ]", ItemFlags.FullWidth))
 local msafe_angles      = menu:AddComponent(MenuLib.Checkbox("Safe Angles", true))
-local downPitch         = menu:AddComponent(MenuLib.Checkbox("Allow Down", false))
+local downPitch         = menu:AddComponent(MenuLib.Checkbox("Safe pitch", true))
 
 menu:AddComponent(MenuLib.Label("                [ Anty Aim ]", ItemFlags.FullWidth))
 
@@ -379,7 +379,7 @@ local function OnCreateMove(userCmd)
         local min = 1
         local max = 4
 
-        if not downPitch:GetValue() == true then
+        if downPitch:GetValue() == true then
             min = 1
             max = 2
         else
