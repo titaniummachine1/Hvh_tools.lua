@@ -1,4 +1,4 @@
---[[ 
+--[[
     HVh_Tools.lua for lmaobox
     Author: github.com/titaniummachine1
     credits:
@@ -313,8 +313,8 @@ local function OnCreateMove(userCmd)
 
     Jitter_Range_Real1 = Jitter_Range_Real:GetValue() / 2
     local currentTarget1 = GetBestTarget(me, pLocalOrigin) --GetClosestTarget(me, me:GetAbsOrigin()) -- Get the best target
-        if #players > 0 then
-            currentTarget = currentTarget1.pos
+        if #players > 1 then
+            currentTarget = currentTarget1.entity:GetAbsOrigin()
         else
             currentTarget = pLocal:GetAbsOrigin()
         end
