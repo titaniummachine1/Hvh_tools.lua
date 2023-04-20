@@ -64,6 +64,7 @@ local yaw_Fake = nil
 local offset = 0
 local jitter_Real = 0
 local jitter_Fake = 0
+local number = 0
 local players = entities.FindByClass("CTFPlayer")
 
 local TargetAngle
@@ -372,30 +373,31 @@ local function OnCreateMove(userCmd)
             gui.SetValue("Anti Aim - Custom Yaw (Fake)", YawFake)
         end]]
     end
+    if RandomPitchtype:GetValue() then
+        local min = 1
+        local max = 4
 
-
-
-        if RandomPitchtype:GetValue() then
-
-            local number = 1
-            if downPitch == true then
-                number = math.random(1, 4)
-            else
-                number =math.random(1, 2)
-            end
-    
-            if number == 1 then
-                gui.SetValue("Anti Aim - Pitch", 1)
-            elseif number == 2 then
-                gui.SetValue("Anti Aim - Pitch", 4)
-            elseif number == 4 then
-                gui.SetValue("Anti Aim - Pitch", 2)
-            else
-                gui.SetValue("Anti Aim - Pitch", 3)
-            end
+        if not downPitch:GetValue() == true then
+            min = 1
+            max = 2
         else
-            gui.SetValue("Anti Aim - Pitch", 1)
+            min = 1
+            max = 4
         end
+
+        number = math.random(min, max)
+        if number == 1 then
+            gui.SetValue("Anti Aim - Pitch", 1)
+        elseif number == 2 then
+            gui.SetValue("Anti Aim - Pitch", 4)
+        elseif number == 3 then
+            gui.SetValue("Anti Aim - Pitch", 2)
+        else 
+            gui.SetValue("Anti Aim - Pitch", 3)
+        end
+    else
+        gui.SetValue("Anti Aim - Pitch", 1)
+    end
 end
 
     --gui.SetValue("Anti Aim - Custom Pitch (Real)", math.random(-90, 90 ))s
