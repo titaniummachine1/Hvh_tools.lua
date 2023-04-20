@@ -46,8 +46,8 @@ local msafe_angles      = menu:AddComponent(MenuLib.Checkbox("Safe Angles", true
 local downPitch         = menu:AddComponent(MenuLib.Checkbox("Allow Down", false))
 local atenemy           = menu:AddComponent(MenuLib.Checkbox("At enemy", true))
 
-local mHeadSize          = menu:AddComponent(MenuLib.Slider("Angle Distance", 1, 60, 35))
-local Jitter_Range_Real  = menu:AddComponent(MenuLib.Slider("Jitter Range", 30, 180, 105))
+local mHeadSize          = menu:AddComponent(MenuLib.Slider("Angle Distance", 1, 60, 37))
+local Jitter_Range_Real  = menu:AddComponent(MenuLib.Slider("Jitter Range", 30, 180, 111))
 
 
 --local mHeadShield        = menu:AddComponent(MenuLib.Checkbox("head Shield", true))
