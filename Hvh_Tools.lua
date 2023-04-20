@@ -95,7 +95,7 @@ local function GetBestTarget(me, pLocalOrigin)
     local closestDistance = math.huge
     -- Loop through all players to find closest one
     for _, entity1 in pairs(players) do
-        if entity1 and entity1:IsAlive() and entity1:GetTeamNumber() ~= me:GetTeamNumber() and entity1:GetPropInt("m_iClass") == 2 then
+        if entity1 and entity1:IsAlive() and entity1:GetTeamNumber() ~= me:GetTeamNumber() and entity1:GetPropInt("m_iClass") == 2 or entity1:GetPropInt("m_iClass") == 8 then
 
             local distance = (entity1:GetAbsOrigin() - me:GetAbsOrigin()):Length()
             if distance < closestDistance and distance < 2000 then -- if player is closer than the current closest player
