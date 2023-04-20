@@ -24,16 +24,18 @@ menu.Style.TitleBg = { 125, 155, 255, 255 }
 menu.Style.Outline = true
 
 
-menu:AddComponent(MenuLib.Label("                     Misc"), ItemFlags.FullWidth)
-local mslowwalk            = menu:AddComponent(MenuLib.Slider("Walk Speed", 1, 200, 150))
+menu:AddComponent(MenuLib.Label("                     Misc", ItemFlags.FullWidth))
+local mslowwalk            = menu:AddComponent(MenuLib.Slider("Walk Speed", 1, 200, 17))
+local mSKey            = menu:AddComponent(MenuLib.Keybind("Key", KEY_LSHIFT, ItemFlags.FullWidth))
+menu:AddComponent(MenuLib.Seperator())
 
 local MinFakeLag        = menu:AddComponent(MenuLib.Slider("Fake Lag Min", 1, 329, 3))
 local MaxFakeLag        = menu:AddComponent(MenuLib.Slider("Fake Lag Max", 2, 330, 2))
 
 local mLegJitter        = menu:AddComponent(MenuLib.Checkbox("Leg Jitter", true))
-local mlgstrengh        = menu:AddComponent(MenuLib.Slider("Leg Jitter Strengh", 1, 145, 9))
+local mlgstrengh        = menu:AddComponent(MenuLib.Slider("Leg Jitter Strengh", 1, 40, 9))
 
-menu:AddComponent(MenuLib.Label("                  Anty Aim"), ItemFlags.FullWidth)
+menu:AddComponent(MenuLib.Label("                  Anty Aim", ItemFlags.FullWidth))
 local mmVisuals         = menu:AddComponent(MenuLib.Checkbox("indicators", true))
 local mmIndicator       = menu:AddComponent(MenuLib.Slider("Indicator Size", 10, 100, 50))
 
@@ -294,7 +296,7 @@ local function OnCreateMove(userCmd)
     
     --pLocal:GetHitboxes()
 
-    if mslowwalk:GetValue() ~= 100 then
+    if mslowwalk:GetValue() ~= 100 and input.IsButtonDown(mSKey:GetValue()) then
         local slowwalk = mslowwalk:GetValue() * 0.01
         userCmd:SetForwardMove(userCmd:GetForwardMove()*slowwalk)
         userCmd:SetSideMove(userCmd:GetSideMove()*slowwalk)
@@ -319,7 +321,7 @@ local function OnCreateMove(userCmd)
 
     Jitter_Range_Real1 = Jitter_Range_Real:GetValue() / 2
     local currentTarget1 = GetBestTarget(me, pLocalOrigin) --GetClosestTarget(me, me:GetAbsOrigin()) -- Get the best target
-        if #players > 1 then
+        if #players > 1 and currentTarget1 then
             currentTarget = currentTarget1.entity:GetAbsOrigin()
         else
             currentTarget = pLocal:GetAbsOrigin()
@@ -375,14 +377,17 @@ local function OnCreateMove(userCmd)
 
         if RandomPitchtype:GetValue() then
 
-            local number = math.random(1, 2)
-            if downPitch == true then number = math.random(1, 4) end
+            local number = 1
+            if downPitch == true then
+                number = math.random(1, 4)
+            else
+                number =math.random(1, 2)
+            end
     
             if number == 1 then
                 gui.SetValue("Anti Aim - Pitch", 1)
             elseif number == 2 then
                 gui.SetValue("Anti Aim - Pitch", 4)
-              
             elseif number == 4 then
                 gui.SetValue("Anti Aim - Pitch", 2)
             else
