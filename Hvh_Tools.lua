@@ -83,70 +83,64 @@ local currentTarget = nil
 ---@param me WPlayer
 ---@return AimTarget? target
 local function GetBestTarget(me, pLocalOrigin, pLocal)
-    players = entities.FindByClass("CTFPlayer")
+    local players = entities.FindByClass("CTFPlayer")
     local target = nil
     local lastFov = math.huge
-
-    local options = { -- options for aim position and field of view
+    local closestPlayer = nil
+    local closestDistance = math.huge
+    local options = {
         AimPos = 1,
         AimFov = 360
     }
-    local closestPlayer = nil
-    local closestDistance = math.huge
-    local ValidTarget
-    -- Loop through all players to find closest one
-    for _, entity1 in pairs(players) do
-        if entity1 == pLocal then goto continue end
-        ValidTarget = entity1 and entity1:IsAlive() and entity1:GetTeamNumber() ~= me:GetTeamNumber()
-        if ValidTarget and entity1:GetPropInt("m_iClass") == 2 or ValidTarget and entity1:GetPropInt("m_iClass") == 8 then
-
-            local distance = (entity1:GetAbsOrigin() - me:GetAbsOrigin()):Length()
-            if distance < closestDistance and distance < 2000 then -- if player is closer than the current closest player
-                closestPlayer = entity1 -- update closest player
-                closestDistance = distance -- update closest distance
-            end
-        end
-        ::continue::
-    end
-
-    for _, entity in pairs(players) do -- iterate through all players
+    
+    for _, entity in pairs(players) do
         if entity == pLocal then goto continue end
-        ValidTarget = entity and entity:IsAlive() and entity:GetTeamNumber() ~= me:GetTeamNumber()
-        if ValidTarget and entity:GetPropInt("m_iClass") == 2 or ValidTarget and entity:GetPropInt("m_iClass") == 8 then
+        
+        local ValidTarget = entity and entity:IsAlive() and entity:GetTeamNumber() ~= me:GetTeamNumber()
+        
+        if ValidTarget and (entity:GetPropInt("m_iClass") == 2 or entity:GetPropInt("m_iClass") == 8) then
+            local distance = (entity:GetAbsOrigin() - me:GetAbsOrigin()):Length()
+            
+            if distance < closestDistance and distance < 2000 then
+                closestPlayer = entity
+                closestDistance = distance
+            end
+            
             local targetPos = entity:GetAbsOrigin()
             local playerPos = me:GetAbsOrigin()
             local forwardVec = engine.GetViewAngles():Forward()
-
+            
             local targetAngle1 = math.deg(math.atan(targetPos.y - playerPos.y, targetPos.x - playerPos.x))
             local viewAngle = math.deg(math.atan(forwardVec.y, forwardVec.x))
             local finalAngle = targetAngle1 - viewAngle
-
-            -- FOV Check
-            local player = WPlayer.FromEntity(entity) -- convert entity to player object
-            local aimPos = player:GetHitboxPos(options.AimPos) -- get aim position from player hitbox
-            local angles = Math.PositionAngles(engine.GetViewAngles():Forward(), aimPos) -- get angle between local player's eye position and aim position
-            local fov = Math.AngleFov(angles, engine.GetViewAngles()) -- calculate field of view between aim angle and local player's view angle
+            
+            local player = WPlayer.FromEntity(entity)
+            local aimPos = player:GetHitboxPos(options.AimPos)
+            local angles = Math.PositionAngles(engine.GetViewAngles():Forward(), aimPos)
+            local fov = Math.AngleFov(angles, engine.GetViewAngles())
             local entityOrigin = entity:GetAbsOrigin()
-      
+            
             local function bestFov()
-                if fov < lastFov then -- if fov is lower than the last fov found, this is a better target
-                    lastFov = fov -- update last fov value
-                    target = { entity = entity, pos = aimPos, angles = angles, factor = fov } -- save target information
+                if fov < lastFov then
+                    lastFov = fov
+                    target = { entity = entity, pos = aimPos, angles = angles, factor = fov }
                 end
             end
             
-            if not Helpers.VisPos(entityOrigin, me:GetEyePos(), aimPos) then -- Visibility check
+            if not Helpers.VisPos(entityOrigin, me:GetEyePos(), aimPos) then
                 bestFov()
-            elseif closestDistance <= 250 then -- player is within 250 units
+            elseif closestDistance <= 250 then
                 target = closestPlayer
-            else -- player is farther than 250 units
+            else
                 bestFov()
             end
-
         end
-    ::continue::
+        
+        ::continue::
     end
-    return target -- return the best target found, or nil if no valid target found
+    
+    if target == nil then return nil end
+    return target
 end
 
 local angleTable = {}
