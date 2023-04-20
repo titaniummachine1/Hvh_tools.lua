@@ -24,7 +24,7 @@ menu.Style.TitleBg = { 125, 155, 255, 255 }
 menu.Style.Outline = true
 
 
-menu:AddComponent(MenuLib.Label("                     Misc", ItemFlags.FullWidth))
+menu:AddComponent(MenuLib.Label("                   [ Misc ]", ItemFlags.FullWidth))
 local mslowwalk            = menu:AddComponent(MenuLib.Slider("Walk Speed", 1, 200, 17))
 local mSKey            = menu:AddComponent(MenuLib.Keybind("Key", KEY_LSHIFT, ItemFlags.FullWidth))
 menu:AddComponent(MenuLib.Seperator())
@@ -35,17 +35,19 @@ local MaxFakeLag        = menu:AddComponent(MenuLib.Slider("Fake Lag Max", 2, 33
 local mLegJitter        = menu:AddComponent(MenuLib.Checkbox("Leg Jitter", true))
 local mlgstrengh        = menu:AddComponent(MenuLib.Slider("Leg Jitter Strengh", 1, 40, 9))
 
-menu:AddComponent(MenuLib.Label("                  Anty Aim", ItemFlags.FullWidth))
 local mmVisuals         = menu:AddComponent(MenuLib.Checkbox("indicators", true))
 local mmIndicator       = menu:AddComponent(MenuLib.Slider("Indicator Size", 10, 100, 50))
+
+menu:AddComponent(MenuLib.Label("                  [ Safety ]", ItemFlags.FullWidth))
+local msafe_angles      = menu:AddComponent(MenuLib.Checkbox("Safe Angles", true))
+local downPitch         = menu:AddComponent(MenuLib.Checkbox("Allow Down", false))
+
+menu:AddComponent(MenuLib.Label("                [ Anty Aim ]", ItemFlags.FullWidth))
 
 local RandomPitchtype   = menu:AddComponent(MenuLib.Checkbox("Jitter Pitch type", true))
 local RandomToggle      = menu:AddComponent(MenuLib.Checkbox("Jitter Yaw", true))
 
 local mDelay            = menu:AddComponent(MenuLib.Slider("jitter Speed", 1, 66, 1))
---local Antioverlap       = menu:AddComponent(MenuLib.Checkbox("Anti Overlap", true))
-local msafe_angles      = menu:AddComponent(MenuLib.Checkbox("Safe Angles", true))
-local downPitch         = menu:AddComponent(MenuLib.Checkbox("Allow Down", false))
 local atenemy           = menu:AddComponent(MenuLib.Checkbox("At enemy", true))
 
 local mHeadSize          = menu:AddComponent(MenuLib.Slider("Angle Distance", 1, 60, 37))
