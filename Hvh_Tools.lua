@@ -67,6 +67,7 @@ local offset = 0
 local jitter_Real = 0
 local jitter_Fake = 0
 local number = 0
+local Got_Hit = false
 local players = entities.FindByClass("CTFPlayer")
 
 local TargetAngle
@@ -79,11 +80,15 @@ local Helpers = lnxLib.TF2.Helpers
 
 local currentTarget = nil
 
+
 -- Returns the best target (lowest fov)
 ---@param me WPlayer
 ---@return AimTarget? target
 local function GetBestTarget(me, pLocalOrigin, pLocal)
+    -- Find all players in the game
     local players = entities.FindByClass("CTFPlayer")
+
+    -- Initialize variables
     local target = nil
     local lastFov = math.huge
     local closestPlayer = nil
@@ -93,33 +98,44 @@ local function GetBestTarget(me, pLocalOrigin, pLocal)
         AimFov = 360
     }
     
+    -- Loop through all players
     for _, entity in pairs(players) do
+        -- Skip the local player
         if entity == pLocal then goto continue end
         
+        -- Check if the player is a valid target
         local ValidTarget = entity and entity:IsAlive() and entity:GetTeamNumber() ~= me:GetTeamNumber()
         
+        -- If the player is a valid target and is a scout or sniper class, continue
         if ValidTarget and (entity:GetPropInt("m_iClass") == 2 or entity:GetPropInt("m_iClass") == 8) then
+            -- Calculate the distance between the player and the local player
             local distance = (entity:GetAbsOrigin() - me:GetAbsOrigin()):Length()
             
+            -- If the player is closer than the closest distance so far, set them as the closest player
             if distance < closestDistance and distance < 2000 then
                 closestPlayer = entity
                 closestDistance = distance
             end
             
+            -- Get the position of the target and the local player, as well as the forward vector of the local player's view
             local targetPos = entity:GetAbsOrigin()
             local playerPos = me:GetAbsOrigin()
             local forwardVec = engine.GetViewAngles():Forward()
             
+            -- Calculate the angle between the target and the local player, as well as the angle between the local player's view and the horizontal plane
             local targetAngle1 = math.deg(math.atan(targetPos.y - playerPos.y, targetPos.x - playerPos.x))
             local viewAngle = math.deg(math.atan(forwardVec.y, forwardVec.x))
             local finalAngle = targetAngle1 - viewAngle
             
+            -- Get the position of the target's hitbox that we want to aim for, as well as the angle we need to aim at to hit it
             local player = WPlayer.FromEntity(entity)
             local aimPos = player:GetHitboxPos(options.AimPos)
             local angles = Math.PositionAngles(engine.GetViewAngles():Forward(), aimPos)
             local fov = Math.AngleFov(angles, engine.GetViewAngles())
             local entityOrigin = entity:GetAbsOrigin()
             
+            
+            -- Define a function that checks if this target has a better FOV than the current target, and if so, sets it as the new target
             local function bestFov()
                 if fov < lastFov then
                     lastFov = fov
@@ -127,21 +143,46 @@ local function GetBestTarget(me, pLocalOrigin, pLocal)
                 end
             end
             
+            -- If the target is not visible, prioritize based on FOV
             if not Helpers.VisPos(entityOrigin, me:GetEyePos(), aimPos) then
                 bestFov()
+            -- If the closest player is within 250 units, prioritize them over FOV
             elseif closestDistance <= 250 then
                 target = closestPlayer
+            -- Otherwise, prioritize based on FOV
             else
                 bestFov()
             end
         end
-        
+        -- Continue to the next player
         ::continue::
     end
-    
+
     if target == nil then return nil end
     return target
 end
+
+
+local function damageLogger(event)
+
+    if (event:GetName() == 'player_hurt' ) then
+
+        local localPlayer = entities.GetLocalPlayer();
+        local victim = entities.GetByUserID(event:GetInt("attacker"))
+        local health = event:GetInt("health")
+        local attacker = entities.GetByUserID(event:GetInt("userid"))
+        local damage = event:GetInt("damageamount")
+
+        if (attacker == nil or localPlayer:GetIndex() ~= attacker:GetIndex()) then
+            return
+        end
+
+        --print("hit by " ..  victim:GetName() .. " or ID " .. victim:GetIndex())
+    end
+    Got_Hit = true
+end
+
+callbacks.Register("FireGameEvent", "exampledamageLogger", damageLogger)
 
 local angleTable = {}
 
@@ -167,28 +208,30 @@ function createAngleTable(Jitter_Min_Real, Jitter_Max_Real, dist)
     end
 end
 
-function randomizeValue(Jitter_Min_Real, Jitter_Max_Real, dist)
+function randomizeValue(jitterMin, jitterMax, dist, gotHit)
     if #angleTable == 0 then
         -- if all angles have been used, regenerate the table
-        createAngleTable(Jitter_Min_Real, Jitter_Max_Real, dist)
+        createAngleTable(jitterMin, jitterMax, dist)
     end
 
-    -- update evaluationTable by 0.1 for each angle every iteration
-    for i = 1, #evaluationTable do
-        if evaluationTable[i] > 1 then
-            evaluationTable[i] = evaluationTable[i] - 0.1
-        elseif evaluationTable[i] < 1 then
-            evaluationTable[i] = evaluationTable[i] + 0.1
+    -- update evaluationTable based on whether I got hit or not
+    if gotHit then
+        for i = 1, #evaluationTable do
+            if evaluationTable[i] < 1 then
+                evaluationTable[i] = evaluationTable[i] + 0.1
+            elseif evaluationTable[i] > 1 then
+                evaluationTable[i] = evaluationTable[i] - 0.1
+            end
+            if i == #evaluationTable then
+                evaluationTable[i] = evaluationTable[i] - 0.1
+            end
         end
     end
-
- 
-    
 
     -- sort angleTable by evaluationTable in descending order
     local sortedTable = {}
     for i = 1, #angleTable do
-        sortedTable[i] = {angle = angleTable[i], evaluation = evaluationTable[i]}
+        sortedTable[i] = { angle = angleTable[i], evaluation = evaluationTable[i] }
     end
     table.sort(sortedTable, function(a, b) return a.evaluation > b.evaluation end)
 
@@ -206,11 +249,21 @@ function randomizeValue(Jitter_Min_Real, Jitter_Max_Real, dist)
     local randomIndex = math.random(1, #highestRated)
     local randomValue = highestRated[randomIndex]
 
-    -- update the evaluation of the randomly selected angle to 2.0
-    for i = 1, #angleTable do
-        if angleTable[i] == randomValue then
-            evaluationTable[i] = 1.1
-            break
+    -- update the evaluation of the randomly selected angle
+    if gotHit then
+        for i = 1, #angleTable do
+            if angleTable[i] == randomValue then
+                evaluationTable[i] = 2.0
+            else
+                evaluationTable[i] = evaluationTable[i] - 0.1
+            end
+        end
+    else
+        for i = 1, #angleTable do
+            if angleTable[i] == randomValue then
+                evaluationTable[i] = 2.0
+                break
+            end
         end
     end
 
@@ -225,6 +278,8 @@ function randomizeValue(Jitter_Min_Real, Jitter_Max_Real, dist)
 
     return randomValue
 end
+
+
 
 
 
@@ -496,7 +551,7 @@ local function OnDraw()
                 draw.Line(screenPos[1], screenPos[2], screenPos1[1], screenPos1[2])
             end
         end
-end
+    end
 
 --[[ Remove the menu when unloaded ]]
 --
