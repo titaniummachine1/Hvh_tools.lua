@@ -11,7 +11,7 @@
 ---@type boolean, lnxLib
 local libLoaded, lnxLib = pcall(require, "lnxLib")
 assert(libLoaded, "lnxLib not found, please install it!")
-assert(lnxLib.GetVersion() >= 0.967, "LNXlib version is too old, please update it!")
+--assert(lnxLib.GetVersion() >= 0.967, "LNXlib version is too old, please update it!")
 
 local menuLoaded, MenuLib = pcall(require, "Menu")                               -- Load MenuLib
 assert(menuLoaded, "MenuLib not found, please install it!")                      -- If not found, throw error
