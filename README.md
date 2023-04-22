@@ -7,18 +7,20 @@ tools for hvh such as anti aim and resolver in future
 
 [![Download Latest](https://img.shields.io/github/downloads/titaniummachine1/Hvh_tools.lua/total.svg?style=for-the-badge&logo=download&label=Download%20Latest)](https://github.com/titaniummachine1/Hvh_tools.lua/releases/latest/download/Hvh_tools.lua)
 
+## Installation
+
+[![](https://img.shields.io/badge/Download-Latest-blue?style=for-the-badge&logo=github)](https://github.com/lnx00/Lmaobox-Library/releases/latest/)
+
+[![](https://img.shields.io/badge/Download-Latest-blue?style=for-the-badge&logo=github)](https://github.com/lnx00/Lmaobox-LUA/blob/main/Menu.lua) 
+
+To install this library, download the latest release from the [releases page](https://github.com/lnx00/Lmaobox-Library/releases/latest/) and copy the `lnxLib.lua` file to your `%localappdata%` folder
+
 
 ![image](https://user-images.githubusercontent.com/78664175/233421596-16c12fc0-1142-4463-85c4-9b25836c45a2.png)
 
 ![image](https://user-images.githubusercontent.com/78664175/233135597-f45177ec-17f4-4048-92d9-91e7b8dd4ddd.png)
 
-## Installation
-
-[![](https://img.shields.io/badge/Download-Latest-blue?style=for-the-badge&logo=github)](https://github.com/lnx00/Lmaobox-Library/releases/latest/)
-
-To install this library, download the latest release from the [releases page](https://github.com/lnx00/Lmaobox-Library/releases/latest/) and copy the `lnxLib.lua` file to your `%localappdata%` folder.
-
-How to run Beta :
+## How to run Beta :
   1. Create a .bat file in the same directory as lmaobox.exe.
   2. Right-click the .bat file and click "edit".
   3. Put "Lmaobox file name.exe -beta" inside the file, save, and run it.
