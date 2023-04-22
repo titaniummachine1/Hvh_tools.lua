@@ -50,8 +50,8 @@ local RandomToggle      = menu:AddComponent(MenuLib.Checkbox("Jitter Yaw", true)
 local mDelay            = menu:AddComponent(MenuLib.Slider("jitter Speed", 1, 66, 1))
 local atenemy           = menu:AddComponent(MenuLib.Checkbox("At enemy", true))
 
-local mHeadSize          = menu:AddComponent(MenuLib.Slider("Angle Distance", 1, 60, 37))
-local Jitter_Range_Real  = menu:AddComponent(MenuLib.Slider("Jitter Range", 30, 180, 111))
+local mHeadSize          = menu:AddComponent(MenuLib.Slider("Angle Distance", 1, 60, 44)) --45
+local Jitter_Range_Real  = menu:AddComponent(MenuLib.Slider("Jitter Range", 30, 180, 55)) --65
 
 
 --local mHeadShield        = menu:AddComponent(MenuLib.Checkbox("head Shield", true))
