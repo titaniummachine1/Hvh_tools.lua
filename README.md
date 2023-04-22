@@ -12,7 +12,7 @@ tools for hvh such as anti aim and resolver in future
 
 [![](https://img.shields.io/badge/Download-lnx00_Libry-blue?style=for-the-badge&logo=github)](https://github.com/lnx00/Lmaobox-Library/releases/latest/)
 
-[![](https://img.shields.io/badge/Download-lnx00_Menu_Latest-blue?style=for-the-badge&logo=github)](https://github.com/lnx00/Lmaobox-LUA/blob/main/Menu.lua) 
+[![](https://img.shields.io/badge/Download-lnx00_Menu-blue?style=for-the-badge&logo=github)](https://github.com/lnx00/Lmaobox-LUA/blob/main/Menu.lua) 
 
 To install this library, download the latest release from the [releases page](https://github.com/lnx00/Lmaobox-Library/releases/latest/) and copy the `lnxLib.lua` file to your `%localappdata%` folder
 
