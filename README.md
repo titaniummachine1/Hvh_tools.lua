@@ -5,13 +5,14 @@
 # Hvh_tools.lua
 tools for hvh such as anti aim and resolver in future
 
-[![Download Latest](https://img.shields.io/github/downloads/titaniummachine1/Hvh_tools.lua/total.svg?style=for-the-badge&logo=download&label=Download%20Latest)](https://github.com/titaniummachine1/Hvh_tools.lua/releases/latest/download/Hvh_tools.lua)
 
 ## Installation
 
-[![](https://img.shields.io/badge/Download-Latest-blue?style=for-the-badge&logo=github)](https://github.com/lnx00/Lmaobox-Library/releases/latest/)
+[![Download Latest](https://img.shields.io/github/downloads/titaniummachine1/Hvh_tools.lua/total.svg?style=for-the-badge&logo=download&label=Download%20Latest)](https://github.com/titaniummachine1/Hvh_tools.lua/releases/latest/download/Hvh_tools.lua)
 
-[![](https://img.shields.io/badge/Download-Latest-blue?style=for-the-badge&logo=github)](https://github.com/lnx00/Lmaobox-LUA/blob/main/Menu.lua) 
+[![](https://img.shields.io/badge/Download-lnx00_Libry-blue?style=for-the-badge&logo=github)](https://github.com/lnx00/Lmaobox-Library/releases/latest/)
+
+[![](https://img.shields.io/badge/Download-lnx00_Menu_Latest-blue?style=for-the-badge&logo=github)](https://github.com/lnx00/Lmaobox-LUA/blob/main/Menu.lua) 
 
 To install this library, download the latest release from the [releases page](https://github.com/lnx00/Lmaobox-Library/releases/latest/) and copy the `lnxLib.lua` file to your `%localappdata%` folder
 
