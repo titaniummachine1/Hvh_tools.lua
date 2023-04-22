@@ -12,11 +12,13 @@ tools for hvh such as anti aim and resolver in future
 
 ![image](https://user-images.githubusercontent.com/78664175/233135597-f45177ec-17f4-4048-92d9-91e7b8dd4ddd.png)
 
-# Setup
-Put all required files in your %localappdata% folder.
-including Menulib Folder from repos files.
+## Installation
 
-How to run Script:
+[![](https://img.shields.io/badge/Download-Latest-blue?style=for-the-badge&logo=github)](https://github.com/lnx00/Lmaobox-Library/releases/latest/)
+
+To install this library, download the latest release from the [releases page](https://github.com/lnx00/Lmaobox-Library/releases/latest/) and copy the `lnxLib.lua` file to your `%localappdata%` folder.
+
+How to run Beta :
   1. Create a .bat file in the same directory as lmaobox.exe.
   2. Right-click the .bat file and click "edit".
   3. Put "Lmaobox file name.exe -beta" inside the file, save, and run it.
