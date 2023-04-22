@@ -33,7 +33,7 @@ local MinFakeLag        = menu:AddComponent(MenuLib.Slider("Fake Lag Min", 1, 32
 local MaxFakeLag        = menu:AddComponent(MenuLib.Slider("Fake Lag Max", 2, 330, 2))
 
 local mLegJitter        = menu:AddComponent(MenuLib.Checkbox("Leg Jitter", true))
-local mlgstrengh        = menu:AddComponent(MenuLib.Slider("Leg Jitter Strengh", 1, 40, 9))
+local mlgstrengh        = menu:AddComponent(MenuLib.Slider("Leg Jitter Strengh", 9, 47, 33))
 
 local mmVisuals         = menu:AddComponent(MenuLib.Checkbox("indicators", true))
 local mmIndicator       = menu:AddComponent(MenuLib.Slider("Indicator Size", 10, 100, 50))
@@ -249,7 +249,7 @@ function randomizeValue(jitterMin, jitterMax, dist, gotHit)
     local randomIndex = math.random(1, #highestRated)
     local randomValue = highestRated[randomIndex]
 
-    -- update the evaluation of the randomly selected angle
+    -- update the evaluation of the  selected angle
     if gotHit then
         for i = 1, #angleTable do
             if angleTable[i] == randomValue then
@@ -267,7 +267,7 @@ function randomizeValue(jitterMin, jitterMax, dist, gotHit)
         end
     end
 
-    -- remove the randomly selected angle from angleTable and evaluationTable
+    -- remove the selected angle from angleTable and evaluationTable
     for i = 1, #angleTable do
         if angleTable[i] == randomValue then
             table.remove(angleTable, i)
@@ -364,15 +364,21 @@ local function OnCreateMove(userCmd)
     if userCmd.command_number % mDelay:GetValue() == 0 then                         -- Check if the command number is even. (Potentially inconsistent, but it works).
         updateYaw(jitter_Real, jitter_Fake)                                      -- Cycle between moving left and right   
     end
+
     --[[ Leg Jitter ]]-- (Messes with certain idle animations. See scout with mad milk / spycrab for a good example)
      if mLegJitter:GetValue() == true then                                -- If Leg Jitter is enabled,
         local vVelocity  = pLocal:EstimateAbsVelocity()
-        if (userCmd.forwardmove == 0) and (userCmd.sidemove == 0)              -- Check if we are pressing WASD
-                                       and (vVelocity:Length2D() < 10) then  -- Check if we not currently moving 
+        if (userCmd.sidemove == 0) then  -- Check if we not currently moving 
             if userCmd.command_number % 2 == 0 then                         -- Check if the command number is even. (Potentially inconsistent, but it works).
-                userCmd:SetSideMove(mlgstrengh:GetValue())                                      -- Cycle between moving left and right
+                userCmd:SetSideMove(mlgstrengh:GetValue())
             else
                 userCmd:SetSideMove(-mlgstrengh:GetValue())
+            end
+        elseif (userCmd.forwardmove == 0) then
+            if userCmd.command_number % 2 == 0 then                         -- Check if the command number is even. (Potentially inconsistent, but it works).
+                userCmd:SetForwardMove(mlgstrengh:GetValue())
+            else
+                userCmd:SetForwardMove(-mlgstrengh:GetValue())
             end
         end
     end
@@ -434,6 +440,7 @@ local function OnCreateMove(userCmd)
         local min = 1
         local max = 4
 
+        -- TF_CLASS_SNIPER = 2,
         if downPitch:GetValue() == true then
             min = 1
             max = 2
@@ -442,6 +449,76 @@ local function OnCreateMove(userCmd)
             max = 4
         end
 
+        --[[    TF_CLASS_SCOUT = 1,
+
+        if downPitch:GetValue() == true then
+             min = 3
+            max = 4
+        else
+            min = 1
+            max = 2
+        end
+
+            TF_CLASS_SOLDIER = 3,
+        if class  TF_CLASS_SOLDIER = 3,
+            min = 1
+            max = 2
+        end
+
+            -- TF_CLASS_DEMOMAN = 4,
+        if downPitch:GetValue() == true then
+            min = 1
+            max = 2
+        else
+            min = 1
+            max = 4
+        end
+
+            --TF_CLASS_MEDIC = 5,
+         if downPitch:GetValue() == true then
+            min = 3
+            max = 4
+        else
+            min = 1
+            max = 2
+        end
+
+            -- TF_CLASS_HEAVYWEAPONS = 6,
+        if downPitch:GetValue() == true then
+            min = 1
+            max = 2
+        else
+            min = 1
+            max = 4
+        end
+
+                TF_CLASS_PYRO = 7,
+        if downPitch:GetValue() == true then
+            min = 3
+            max = 4
+        else
+            min = 1
+            max = 2
+        end
+
+        if TF_CLASS_SPY = 8,
+            min = 1
+            max = 2
+        
+            min = 1
+            max = 4
+        end
+
+            --TF_CLASS_ENGINEER = 9,
+        if downPitch:GetValue() == true then
+            min = 3
+            max = 4
+        else
+            min = 1
+            max = 2
+        end
+        ]]
+
         number = math.random(min, max)
         if number == 1 then
             gui.SetValue("Anti Aim - Pitch", 1)
@@ -449,7 +526,7 @@ local function OnCreateMove(userCmd)
             gui.SetValue("Anti Aim - Pitch", 4)
         elseif number == 3 then
             gui.SetValue("Anti Aim - Pitch", 2)
-        else 
+        else
             gui.SetValue("Anti Aim - Pitch", 3)
         end
     else
