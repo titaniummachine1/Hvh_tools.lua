@@ -55,6 +55,13 @@ local atenemy           = menu:AddComponent(MenuLib.Checkbox("At enemy", true))
 local mHeadSize          = menu:AddComponent(MenuLib.Slider("Angle Distance", 1, 60, 44)) --45
 local Jitter_Range_Real  = menu:AddComponent(MenuLib.Slider("Jitter Range", 30, 180, 55)) --65
 
+client.SetConVar("cl_vWeapon_sway_interp",              0)             -- Set cl_vWeapon_sway_interp to 0
+client.SetConVar("cl_jiggle_bone_framerate_cutoff", 0)             -- Set cl_jiggle_bone_framerate_cutoff to 0
+client.SetConVar("cl_bobcycle",                     10000)         -- Set cl_bobcycle to 10000
+client.SetConVar("sv_cheats", 1)                                    -- debug fast setup
+client.SetConVar("mp_disable_respawn_times", 1)
+client.SetConVar("mp_respawnwavetime", -1)
+client.SetConVar("mp_teams_unbalance_limit", 1000)
 
 --local mHeadShield        = menu:AddComponent(MenuLib.Checkbox("head Shield", true))
 
@@ -70,6 +77,12 @@ local jitter_Real = 0
 local jitter_Fake = 0
 local number = 0
 local Got_Hit = false
+local pitchType
+local BEST = 1
+local BEST_UP = 2
+local BEST_DOWN = 3
+local UNSAFE = 4
+local pitchtype1 = gui.GetValue("Anti Aim - Pitch")
 local players = entities.FindByClass("CTFPlayer")
 
 local TargetAngle
@@ -369,7 +382,6 @@ end]]
 
 
 
-
     --[[every 2 seconds it will update
         tick_count = tick_count + 1
         if tick_count % 132 == 0 then
@@ -381,47 +393,67 @@ local function updateYaw(Jitter_Real, Jitter_Fake)
         local targetPos = currentTarget
     if targetPos == nil then goto continue end
     
-        local playerPos = entities.GetLocalPlayer():GetAbsOrigin()
-        local forwardVec = engine.GetViewAngles():Forward()
-
-        targetAngle = math.deg(math.atan(targetPos.y - playerPos.y, targetPos.x - playerPos.x))
-        local viewAngle = math.deg(math.atan(forwardVec.y, forwardVec.x))
-        TargetAngle = math.floor(targetAngle - viewAngle)
-
-        local yaw
-        if not atenemy:GetValue() then
-            yaw = Jitter_Fake
-        else
-            yaw = TargetAngle + Jitter_Fake
-        end
-        -- Clamp the yaw angle if it's greater than 180 or less than -180
-        if yaw > 180 then
-            yaw = yaw - 360
-        elseif yaw < -180 then
-            yaw = yaw + 360
-        end
-
-        Jitter_Fake1 = yaw - TargetAngle
-
-        yaw = math.floor(yaw)
-        
-        gui.SetValue("Anti Aim - Custom Yaw (Fake)", yaw)
-
+    local playerPos = entities.GetLocalPlayer():GetAbsOrigin()
+    local forwardVec = engine.GetViewAngles():Forward()
     
-        if not atenemy then
-            yaw = jitter_Real
+    targetAngle = math.deg(math.atan(targetPos.y - playerPos.y, targetPos.x - playerPos.x))
+    local viewAngle = math.deg(math.atan(forwardVec.y, forwardVec.x))
+    TargetAngle = math.floor(targetAngle - viewAngle)
+    
+    local yaw
+    
+    --Fake angle
+    if not atenemy:GetValue() then
+        yaw = Jitter_Fake
+    else
+        yaw = TargetAngle + Jitter_Fake
+    end
+    
+    -- Clamp the yaw angle if it's greater than 180 or less than -180
+    if yaw > 180 then
+        yaw = yaw - 360
+    elseif yaw < -180 then
+        yaw = yaw + 360
+    end
+    
+    Jitter_Fake1 = yaw - TargetAngle
+    yaw = math.floor(yaw)
+    gui.SetValue("Anti Aim - Custom Yaw (Fake)", yaw)
+    
+    --Real angle
+    if not atenemy:GetValue() then
+        yaw = jitter_Real
+    else
+        
+        if pitchDowned then
+            yaw = TargetAngle - jitter_Real + 180
         else
             yaw = TargetAngle - jitter_Real
         end
-        -- Clamp the yaw angle if it's greater than 180 or less than -180
-        if yaw > 180 then
-            yaw = yaw - 360
-        elseif yaw < -180 then
-            yaw = yaw + 360
-        end
-        Jitter_Real1 = yaw - TargetAngle
-        yaw = math.floor(yaw)
-        gui.SetValue("Anti Aim - Custom Yaw (Real)", yaw)
+    end
+    
+    -- Clamp the yaw angle if it's greater than 180 or less than -180
+    if yaw > 180 then
+        yaw = yaw - 360
+    elseif yaw < -180 then
+        yaw = yaw + 360
+    end
+    
+    Jitter_Real1 = yaw - TargetAngle
+    yaw = math.floor(yaw)
+    gui.SetValue("Anti Aim - Custom Yaw (Real)", yaw)
+    
+
+    -- Clamp the yaw angle if it's greater than 180 or less than -180
+    if yaw > 180 then
+        yaw = yaw - 360
+    elseif yaw < -180 then
+        yaw = yaw + 360
+    end
+    Jitter_Real1 = yaw - TargetAngle
+    yaw = math.floor(yaw)
+    gui.SetValue("Anti Aim - Custom Yaw (Real)", yaw)
+
     end
     ::continue::
 end
@@ -432,9 +464,13 @@ local function OnCreateMove(userCmd)
     local pLocal = entities.GetLocalPlayer()
     if not pLocal then return end
     if not pLocal:IsAlive() then return end
-
+    pitchtype1 = gui.GetValue("Anti Aim - Pitch")
     local pLocalOrigin = pLocal:GetAbsOrigin() + Vector3(0, 0, 75)
-
+    if pitchType == 3 or pitchtype1 == "fake up" or pitchtype1 == "down" then
+        pitchDowned = true
+    else
+        pitchDowned = false
+    end
     local Jitter_Min_Real = -Jitter_Range_Real1
     local Jitter_Max_Real = Jitter_Range_Real1
     
@@ -443,7 +479,7 @@ local function OnCreateMove(userCmd)
     --auto adds playerlist priority
     if mAutoPriority:GetValue() then
         for _, vPlayer in pairs(players) do
-            if vPlayer ~= nil and vPlayer:IsAlive() and vPlayer:GetTeamNumber() ~= pLocal:GetTeamNumber() then
+            if vPlayer ~= nil and vPlayer:GetTeamNumber() ~= pLocal:GetTeamNumber() then
                 if playerlist.GetPriority(vPlayer) == 0 then
                     playerlist.SetPriority(vPlayer, 10)
                 end
@@ -491,6 +527,8 @@ local function OnCreateMove(userCmd)
         else
             currentTarget = pLocal:GetAbsOrigin()
         end
+        local class = pLocal:GetPropInt("m_iClass")
+
     local pWeapon = me:GetPropEntity("m_hActiveWeapon")
     local AimbotTarget = GetBestTarget(me)
     --userCmd:SetViewAngles(currentTarget.angles:Unpack())
@@ -511,6 +549,7 @@ local function OnCreateMove(userCmd)
         Jitter_Max_Real = Jitter_Range_Real1
             if atenemy:GetValue() then
                 jitter_Real = randomizeValue(Jitter_Min_Real, Jitter_Max_Real, Head_size)
+                
                 jitter_real1 = jitter_Real
 
                 local Number1 = math.random(1, 3)
@@ -537,101 +576,60 @@ local function OnCreateMove(userCmd)
             gui.SetValue("Anti Aim - Custom Yaw (Fake)", YawFake)
         end]]
     end
-    if RandomPitchtype:GetValue() then
-        local min = 1
-        local max = 4
 
-        -- TF_CLASS_SNIPER = 2,
-        if downPitch:GetValue() == true then
-            min = 1
-            max = 2
-        else
-            min = 1
-            max = 4
+if RandomPitchtype:GetValue() then
+    if userCmd.command_number % mDelay:GetValue() == 0 then
+        -- Define helper function to set min and max values based on pitch type
+        local function setMinMax(pitchType)
+            if pitchType == UNSAFE then
+                return 1, 4 -- use all angles when downPitch is true
+            elseif pitchType == BEST_UP then
+                return 1, 2 -- use best angles otherwise
+            elseif pitchType == BEST_DOWN then
+                return 3, 4 -- use safer angles otherwise
+            end
         end
 
-        --[[    TF_CLASS_SCOUT = 1,
-
-        if downPitch:GetValue() == true then
-             min = 3
-            max = 4
-        else
-            min = 1
-            max = 2
+        -- Set initial values for min and max
+        local min, max = setMinMax(BEST)
+        min, max = setMinMax(UNSAFE)
+        -- Set pitch type based on class and downPitch value
+        if not downPitch:GetValue() then
+            pitchType = UNSAFE
+        elseif class == 1 then -- TF_CLASS_scout
+            pitchType = BEST_DOWN
+        elseif class == 2 then -- TF_CLASS_sniper
+            pitchType = BEST_UP
+        elseif class == 3 then -- TF_CLASS_SOLDIER
+            pitchType = UNSAFE
+        elseif class == 4 then -- TF_CLASS_DEMOMAN
+            pitchType = BEST_DOWN
+        elseif class == 5 then -- TF_CLASS_MEDIC
+            pitchType = BEST_DOWN
+        elseif class == 6 then -- TF_CLASS_HEAVYWEAPONS
+            pitchType = BEST_UP
+        elseif class == 7 then -- TF_CLASS_PYRO
+            pitchType = BEST_DOWN
+        elseif class == 8 then -- TF_CLASS_SPY
+            pitchType = BEST_DOWN
+        elseif class == 9 then -- TF_CLASS_ENGINEER
+            pitchType = BEST_DOWN
         end
 
-            TF_CLASS_SOLDIER = 3,
-        if class  TF_CLASS_SOLDIER = 3,
-            min = 1
-            max = 2
+        -- Set min and max values based on pitch type
+        min, max = setMinMax(pitchType)
+            
+            number = math.random(min, max)
+            if number == 1 then
+                gui.SetValue("Anti Aim - Pitch", 1)
+            elseif number == 2 then
+                gui.SetValue("Anti Aim - Pitch", 4)
+            elseif number == 3 then
+                gui.SetValue("Anti Aim - Pitch", 2)
+            else
+                gui.SetValue("Anti Aim - Pitch", 3)
+            end
         end
-
-            -- TF_CLASS_DEMOMAN = 4,
-        if downPitch:GetValue() == true then
-            min = 1
-            max = 2
-        else
-            min = 1
-            max = 4
-        end
-
-            --TF_CLASS_MEDIC = 5,
-         if downPitch:GetValue() == true then
-            min = 3
-            max = 4
-        else
-            min = 1
-            max = 2
-        end
-
-            -- TF_CLASS_HEAVYWEAPONS = 6,
-        if downPitch:GetValue() == true then
-            min = 1
-            max = 2
-        else
-            min = 1
-            max = 4
-        end
-
-                TF_CLASS_PYRO = 7,
-        if downPitch:GetValue() == true then
-            min = 3
-            max = 4
-        else
-            min = 1
-            max = 2
-        end
-
-        if TF_CLASS_SPY = 8,
-            min = 1
-            max = 2
-        
-            min = 1
-            max = 4
-        end
-
-            --TF_CLASS_ENGINEER = 9,
-        if downPitch:GetValue() == true then
-            min = 3
-            max = 4
-        else
-            min = 1
-            max = 2
-        end
-        ]]
-
-        number = math.random(min, max)
-        if number == 1 then
-            gui.SetValue("Anti Aim - Pitch", 1)
-        elseif number == 2 then
-            gui.SetValue("Anti Aim - Pitch", 4)
-        elseif number == 3 then
-            gui.SetValue("Anti Aim - Pitch", 2)
-        else
-            gui.SetValue("Anti Aim - Pitch", 3)
-        end
-    else
-        gui.SetValue("Anti Aim - Pitch", 1)
     end
 end
 
@@ -674,7 +672,6 @@ local function OnDraw()
             else
                 yaw = targetAngle + Jitter_Real1
             end
-            
             if targetAngle then
                 direction = Vector3(math.cos(math.rad(yaw)), math.sin(math.rad(yaw)), 0)
             end
