@@ -38,12 +38,13 @@ local mlgstrengh        = menu:AddComponent(MenuLib.Slider("Leg Jitter Strengh",
 
 local mmVisuals         = menu:AddComponent(MenuLib.Checkbox("indicators", true))
 local mmIndicator       = menu:AddComponent(MenuLib.Slider("Indicator Size", 10, 100, 50))
-local mAutoPriority     = menu:AddComponent(MenuLib.Checkbox("Auto Priority", false))
+local mAutoPriority     = menu:AddComponent(MenuLib.Checkbox("Auto Priority", true))
 
 menu:AddComponent(MenuLib.Label("                  [ Safety ]", ItemFlags.FullWidth))
 local msafe_angles      = menu:AddComponent(MenuLib.Checkbox("Safe Angles", true))
 local downPitch         = menu:AddComponent(MenuLib.Checkbox("Safe pitch", true))
 local mAntiTaunt        = menu:AddComponent(MenuLib.Checkbox("Anti Holiday Punch", true))
+local mHandShield        = menu:AddComponent(MenuLib.Checkbox("Hand Shield(BETA)", false))
 menu:AddComponent(MenuLib.Label("                [ Anty Aim ]", ItemFlags.FullWidth))
 
 local RandomPitchtype   = menu:AddComponent(MenuLib.Checkbox("Jitter Pitch type", true))
@@ -224,21 +225,22 @@ function createAngleTable(Jitter_Min_Real, Jitter_Max_Real, dist)
     end
 end
 
-function randomizeValue(Jitter_Min_Real, Jitter_Max_Real, dist)
+function randomizeValue(Jitter_Min_Real, Jitter_Max_Real, dist, Got_Hit)
     if #angleTable == 0 then
         -- if all angles have been used, regenerate the table
         createAngleTable(Jitter_Min_Real, Jitter_Max_Real, dist)
     end
 
     -- update evaluationTable by 0.1 for each angle every iteration
-    for i = 1, #evaluationTable do
-        if evaluationTable[i] > 1 then
-            evaluationTable[i] = evaluationTable[i] - 0.1
-        elseif evaluationTable[i] < 1 then
-            evaluationTable[i] = evaluationTable[i] + 0.1
+    if Got_Hit == true then
+        for i = 1, #evaluationTable do
+            if evaluationTable[i] > 1 then
+                evaluationTable[i] = evaluationTable[i] - 0.1
+            elseif evaluationTable[i] < 1 then
+                evaluationTable[i] = evaluationTable[i] + 0.1
+            end
         end
     end
-
  
     
 
@@ -263,15 +265,15 @@ function randomizeValue(Jitter_Min_Real, Jitter_Max_Real, dist)
     local randomIndex = math.random(1, #highestRated)
     local randomValue = highestRated[randomIndex]
 
-    -- update the evaluation of the randomly selected angle to 2.0
+    -- update the evaluation of the randomly selected angle
     for i = 1, #angleTable do
         if angleTable[i] == randomValue then
-            evaluationTable[i] = 1.1
+            evaluationTable[i] = 0.9
             break
         end
     end
 
-    -- remove the randomly selected angle from angleTable and evaluationTable
+    -- remove the selected angle from angleTable and evaluationTable
     for i = 1, #angleTable do
         if angleTable[i] == randomValue then
             table.remove(angleTable, i)
@@ -548,8 +550,21 @@ local function OnCreateMove(userCmd)
         Jitter_Min_Real = -Jitter_Range_Real1
         Jitter_Max_Real = Jitter_Range_Real1
             if atenemy:GetValue() then
-                jitter_Real = randomizeValue(Jitter_Min_Real, Jitter_Max_Real, Head_size)
-                
+                if mHandShield:GetValue() then
+                    if (userCmd:GetButtons() & IN_ATTACK) == 1 then
+                        jitter_Real = randomizeValue(Jitter_Min_Real, Jitter_Max_Real, Head_size)
+                    else
+                        jitter_Real = 30
+                    end
+                    if pLocal:InCond(1) == true then
+                        jitter_Real = 30
+                    else
+                        jitter_Real = randomizeValue(Jitter_Min_Real, Jitter_Max_Real, Head_size)
+                    end
+                else
+                    jitter_Real = randomizeValue(Jitter_Min_Real, Jitter_Max_Real, Head_size)
+                end
+
                 jitter_real1 = jitter_Real
 
                 local Number1 = math.random(1, 3)
