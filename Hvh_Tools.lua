@@ -605,7 +605,7 @@ if RandomPitchtype:GetValue() then
         elseif class == 4 then -- TF_CLASS_DEMOMAN
             pitchType = BEST_DOWN
         elseif class == 5 then -- TF_CLASS_MEDIC
-            pitchType = BEST_DOWN
+            pitchType = BEST_UP
         elseif class == 6 then -- TF_CLASS_HEAVYWEAPONS
             pitchType = BEST_UP
         elseif class == 7 then -- TF_CLASS_PYRO
