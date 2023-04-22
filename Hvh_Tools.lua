@@ -439,10 +439,18 @@ local function OnCreateMove(userCmd)
     local Jitter_Max_Real = Jitter_Range_Real1
     
     --pLocal:GetHitboxes()
+
+    --auto adds playerlist priority
     if mAutoPriority:GetValue() then
         for _, vPlayer in pairs(players) do
             if vPlayer ~= nil and vPlayer:IsAlive() and vPlayer:GetTeamNumber() ~= pLocal:GetTeamNumber() then
-                playerlist.SetPriority(vPlayer, 10)
+                if playerlist.GetPriority(vPlayer) == 0 then
+                    playerlist.SetPriority(vPlayer, 10)
+                end
+            else
+                if playerlist.GetPriority(vPlayer) == 10 then
+                    playerlist.SetPriority(vPlayer, 0)
+                end
             end
         end
     end
