@@ -110,7 +110,7 @@ local function GetBestTarget(me, pLocalOrigin, pLocal)
         if ValidTarget and (entity:GetPropInt("m_iClass") == 2 or entity:GetPropInt("m_iClass") == 8) then
             -- Calculate the distance between the player and the local player
             local distance = (entity:GetAbsOrigin() - me:GetAbsOrigin()):Length()
-            
+
             -- If the player is closer than the closest distance so far, set them as the closest player
             if distance < closestDistance and distance < 2000 then
                 closestPlayer = entity
@@ -184,7 +184,91 @@ end
 
 callbacks.Register("FireGameEvent", "exampledamageLogger", damageLogger)
 
+
 local angleTable = {}
+
+-- initialize angleTable and evaluationTable
+local evaluationTable = {}
+
+function createAngleTable(Jitter_Min_Real, Jitter_Max_Real, dist)
+    local numPoints = math.floor((Jitter_Max_Real - Jitter_Min_Real) / dist) + 1
+    local stepSize = (Jitter_Max_Real - Jitter_Min_Real) / (numPoints - 1)
+    for i = 1, numPoints do
+        local angle = Jitter_Min_Real + (i - 1) * stepSize
+        local evaluation = 1 -- initialize evaluation to 1
+        if msafe_angles:GetValue() then
+            if angle ~= 90 and angle ~= -90 and angle ~= 0 and angle ~= 180 then
+                table.insert(angleTable, angle)
+                table.insert(evaluationTable, evaluation)
+            end
+        else
+            evaluation = 0
+            table.insert(angleTable, angle)
+            table.insert(evaluationTable, evaluation)
+        end
+    end
+end
+
+function randomizeValue(Jitter_Min_Real, Jitter_Max_Real, dist)
+    if #angleTable == 0 then
+        -- if all angles have been used, regenerate the table
+        createAngleTable(Jitter_Min_Real, Jitter_Max_Real, dist)
+    end
+
+    -- update evaluationTable by 0.1 for each angle every iteration
+    for i = 1, #evaluationTable do
+        if evaluationTable[i] > 1 then
+            evaluationTable[i] = evaluationTable[i] - 0.1
+        elseif evaluationTable[i] < 1 then
+            evaluationTable[i] = evaluationTable[i] + 0.1
+        end
+    end
+
+ 
+    
+
+    -- sort angleTable by evaluationTable in descending order
+    local sortedTable = {}
+    for i = 1, #angleTable do
+        sortedTable[i] = {angle = angleTable[i], evaluation = evaluationTable[i]}
+    end
+    table.sort(sortedTable, function(a, b) return a.evaluation > b.evaluation end)
+
+    -- find the highest rated angles and randomize between them
+    local highestRated = {}
+    local highestRating = sortedTable[1].evaluation
+    for i = 1, #sortedTable do
+        if sortedTable[i].evaluation == highestRating then
+            table.insert(highestRated, sortedTable[i].angle)
+        else
+            break
+        end
+    end
+
+    local randomIndex = math.random(1, #highestRated)
+    local randomValue = highestRated[randomIndex]
+
+    -- update the evaluation of the randomly selected angle to 2.0
+    for i = 1, #angleTable do
+        if angleTable[i] == randomValue then
+            evaluationTable[i] = 1.1
+            break
+        end
+    end
+
+    -- remove the randomly selected angle from angleTable and evaluationTable
+    for i = 1, #angleTable do
+        if angleTable[i] == randomValue then
+            table.remove(angleTable, i)
+            table.remove(evaluationTable, i)
+            break
+        end
+    end
+
+    return randomValue
+end
+
+--[[local angleTable = {}
 
 -- initialize angleTable and evaluationTable
 local evaluationTable = {}
@@ -277,7 +361,7 @@ function randomizeValue(jitterMin, jitterMax, dist, gotHit)
     end
 
     return randomValue
-end
+end]]
 
 
 
