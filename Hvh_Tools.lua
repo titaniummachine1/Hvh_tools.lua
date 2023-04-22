@@ -4,6 +4,7 @@
     credits:
     Muqa for aa help
     lmaobox for fixing cheat
+    Vodeninja.ru for config help
     others... who inspired me
 ]]
 ---@alias AimTarget { entity : Entity, pos : Vector3, angles : EulerAngles, factor : number }
@@ -37,11 +38,12 @@ local mlgstrengh        = menu:AddComponent(MenuLib.Slider("Leg Jitter Strengh",
 
 local mmVisuals         = menu:AddComponent(MenuLib.Checkbox("indicators", true))
 local mmIndicator       = menu:AddComponent(MenuLib.Slider("Indicator Size", 10, 100, 50))
+local mAutoPriority     = menu:AddComponent(MenuLib.Checkbox("Auto Priority", false))
 
 menu:AddComponent(MenuLib.Label("                  [ Safety ]", ItemFlags.FullWidth))
 local msafe_angles      = menu:AddComponent(MenuLib.Checkbox("Safe Angles", true))
 local downPitch         = menu:AddComponent(MenuLib.Checkbox("Safe pitch", true))
-
+local mAntiTaunt        = menu:AddComponent(MenuLib.Checkbox("Anti Holiday Punch", true))
 menu:AddComponent(MenuLib.Label("                [ Anty Aim ]", ItemFlags.FullWidth))
 
 local RandomPitchtype   = menu:AddComponent(MenuLib.Checkbox("Jitter Pitch type", true))
@@ -437,6 +439,13 @@ local function OnCreateMove(userCmd)
     local Jitter_Max_Real = Jitter_Range_Real1
     
     --pLocal:GetHitboxes()
+    if mAutoPriority:GetValue() then
+        for _, vPlayer in pairs(players) do
+            if vPlayer ~= nil and vPlayer:IsAlive() and vPlayer:GetTeamNumber() ~= pLocal:GetTeamNumber() then
+                playerlist.SetPriority(vPlayer, 10)
+            end
+        end
+    end
 
     if mslowwalk:GetValue() ~= 100 and input.IsButtonDown(mSKey:GetValue()) then
         local slowwalk = mslowwalk:GetValue() * 0.01
