@@ -19,7 +19,7 @@ assert(menuLoaded, "MenuLib not found, please install it!")                     
 assert(MenuLib.Version >= 1.44, "MenuLib version is too old, please update it!") -- If version is too old, throw error
 
 --[[ Menu ]]
---
+
 local menu         = MenuLib.Create("Hvh_tools", MenuFlags.AutoSize)
 menu.Style.TitleBg = { 125, 155, 255, 255 }
 menu.Style.Outline = true
@@ -102,7 +102,7 @@ local currentTarget = nil
 ---@return AimTarget? target
 local function GetBestTarget(me, pLocalOrigin, pLocal)
     -- Find all players in the game
-    local players = entities.FindByClass("CTFPlayer")
+    players = entities.FindByClass("CTFPlayer")
 
     -- Initialize variables
     local target = nil
@@ -183,56 +183,51 @@ local function damageLogger(event)
 
     if (event:GetName() == 'player_hurt' ) then
 
-        local localPlayer = entities.GetLocalPlayer();
-        local victim = entities.GetByUserID(event:GetInt("attacker"))
-        local health = event:GetInt("health")
-        local attacker = entities.GetByUserID(event:GetInt("userid"))
-        local damage = event:GetInt("damageamount")
+            if event:GetName() ~= "player_hurt" then return end -- only allows player_hurt event go through
+            --declare variables
+            --to get all structures of event: https://wiki.alliedmods.net/Team_Fortress_2_Events#player_hurt
+            
+            local victim_entity = entities.GetByUserID(event:GetInt("userid"))
+            local attacker = entities.GetByUserID(event:GetInt("attacker"))
+            local localplayer = entities.GetLocalPlayer()
+            local damage = event:GetInt("damageamount")
+            local iscrit = event:GetString("crit") == 1 and true or false
+            local health = event:GetInt("health")
+            local ping = entities.GetPlayerResources():GetPropDataTableInt("m_iPing")[victim_entity:GetIndex()]
 
-        if (attacker == nil or localPlayer:GetIndex() ~= attacker:GetIndex()) then
+        if (attacker == nil or entities.GetLocalPlayer() == attacker:GetIndex()) then
             return
         end
-
+        Got_Hit = true
+        --print("adjustment")
         --print("hit by " ..  victim:GetName() .. " or ID " .. victim:GetIndex())
     end
-    Got_Hit = true
+
 end
 
 callbacks.Register("FireGameEvent", "exampledamageLogger", damageLogger)
 
 
+-- define the angle table and evaluation table
+local predefinedAngles = { 135, -135, 405, -405}
+local predefinedEvaluations = {1, 1, 1, 1}
+
+-- initialize the angle table and evaluation table with the predefined values
 local angleTable = {}
-
--- initialize angleTable and evaluationTable
 local evaluationTable = {}
-
-function createAngleTable(Jitter_Min_Real, Jitter_Max_Real, dist)
-    local numPoints = math.floor((Jitter_Max_Real - Jitter_Min_Real) / dist) + 1
-    local stepSize = (Jitter_Max_Real - Jitter_Min_Real) / (numPoints - 1)
-    for i = 1, numPoints do
-        local angle = Jitter_Min_Real + (i - 1) * stepSize
-        local evaluation = 1 -- initialize evaluation to 1
-        if msafe_angles:GetValue() then
-            if angle ~= 90 and angle ~= -90 and angle ~= 0 and angle ~= 180 then
-                table.insert(angleTable, angle)
-                table.insert(evaluationTable, evaluation)
-            end
-        else
-            evaluation = 0
-            table.insert(angleTable, angle)
-            table.insert(evaluationTable, evaluation)
-        end
-    end
+for i = 1, #predefinedAngles do
+    table.insert(angleTable, predefinedAngles[i])
+    table.insert(evaluationTable, predefinedEvaluations[i])
 end
 
-function randomizeValue(Jitter_Min_Real, Jitter_Max_Real, dist, Got_Hit)
+function randomizeValue(Jitter_Min_Real, Jitter_Max_Real, dist)
     if #angleTable == 0 then
         -- if all angles have been used, regenerate the table
         createAngleTable(Jitter_Min_Real, Jitter_Max_Real, dist)
     end
-
     -- update evaluationTable by 0.1 for each angle every iteration
     if Got_Hit == true then
+        client.ChatPrintf("[AA] evaluating angles..")
         for i = 1, #evaluationTable do
             if evaluationTable[i] > 1 then
                 evaluationTable[i] = evaluationTable[i] - 0.1
@@ -242,8 +237,6 @@ function randomizeValue(Jitter_Min_Real, Jitter_Max_Real, dist, Got_Hit)
         end
     end
  
-    
-
     -- sort angleTable by evaluationTable in descending order
     local sortedTable = {}
     for i = 1, #angleTable do
@@ -264,26 +257,19 @@ function randomizeValue(Jitter_Min_Real, Jitter_Max_Real, dist, Got_Hit)
 
     local randomIndex = math.random(1, #highestRated)
     local randomValue = highestRated[randomIndex]
-
-    -- update the evaluation of the randomly selected angle
-    for i = 1, #angleTable do
-        if angleTable[i] == randomValue then
-            evaluationTable[i] = 0.9
-            break
+    -- update the evaluation of the selected angle
+    if Got_Hit then
+        for i = 1, #angleTable do
+            if angleTable[i] == randomValue then
+                evaluationTable[i] = evaluationTable[i] - 0.1
+                break
+            end
         end
     end
-
-    -- remove the selected angle from angleTable and evaluationTable
-    for i = 1, #angleTable do
-        if angleTable[i] == randomValue then
-            table.remove(angleTable, i)
-            table.remove(evaluationTable, i)
-            break
-        end
-    end
-
+    Got_Hit = false
     return randomValue
 end
+
 
 --[[local angleTable = {}
 
@@ -554,10 +540,10 @@ local function OnCreateMove(userCmd)
                     if (userCmd:GetButtons() & IN_ATTACK) == 1 then
                         jitter_Real = randomizeValue(Jitter_Min_Real, Jitter_Max_Real, Head_size)
                     else
-                        jitter_Real = 30
+                        jitter_Real = 35
                     end
                     if pLocal:InCond(1) == true then
-                        jitter_Real = 30
+                        jitter_Real = 35
                     else
                         jitter_Real = randomizeValue(Jitter_Min_Real, Jitter_Max_Real, Head_size)
                     end
