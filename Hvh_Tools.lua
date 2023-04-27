@@ -5,6 +5,7 @@
     Muqa for aa help
     lmaobox for fixing cheat
     Vodeninja.ru for config help
+    trophy for Fakelag explaination
     others... who inspired me
 ]]
 ---@alias AimTarget { entity : Entity, pos : Vector3, angles : EulerAngles, factor : number }
@@ -30,7 +31,7 @@ local mSKey     = menu:AddComponent(MenuLib.Keybind("Key", KEY_LSHIFT, ItemFlags
 menu:AddComponent(MenuLib.Seperator())
 
 local MinFakeLag    = menu:AddComponent(MenuLib.Slider("Fake Lag Min", 1, 329, 120))
-local MaxFakeLag    = menu:AddComponent(MenuLib.Slider("Fake Lag Max", 2, 330, 330))
+local MaxFakeLag    = menu:AddComponent(MenuLib.Slider("Fake Lag Max", 2, 330, 315))
 
 local mLegJitter    = menu:AddComponent(MenuLib.Checkbox("Leg Jitter", true))
 local mlgstrengh    = menu:AddComponent(MenuLib.Slider("Leg Jitter Strengh", 9, 47, 33))
