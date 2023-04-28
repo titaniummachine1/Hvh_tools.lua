@@ -49,7 +49,7 @@ menu:AddComponent(MenuLib.Label("                [ Anty Aim ]", ItemFlags.FullWi
 
 local RandomPitchtype = menu:AddComponent(MenuLib.Checkbox("Jitter Pitch type", true))
 local RandomToggle    = menu:AddComponent(MenuLib.Checkbox("Jitter Yaw", true))
-
+local mRoll           = menu:AddComponent(MenuLib.Checkbox("Roll", true))
 local mDelay          = menu:AddComponent(MenuLib.Slider("jitter Speed", 1, 66, 1))
 local atenemy         = menu:AddComponent(MenuLib.Checkbox("At enemy", true))
 local mOldMethod         = menu:AddComponent(MenuLib.Checkbox("Old Method", false))
@@ -205,7 +205,6 @@ end
 
 callbacks.Register("FireGameEvent", "exampledamageLogger", damageLogger)
 
-
 -- define the angle table, evaluation table, and usage table
 local predefinedAngles = { 145, -145, 390, -390}
 local predefinedEvaluations = { 1, 1, 1, 1 }
@@ -234,9 +233,10 @@ local function createAngleTable()
     end
 end
 
+lastangle = 0
 function randomizeValue()
 
-if not mOldMethod then
+if mOldMethod then
     -- update evaluationTable by 0.1 for each angle every iteration
     if Got_Hit == true then
         for i = 1, #evaluationTable do
@@ -336,7 +336,7 @@ else
     local highestRated = {}
     local highestRating = sortedTable[1].evaluation
     for i = 1, #sortedTable do
-        if sortedTable[i].evaluation == highestRating then
+        if sortedTable[i].evaluation == highestRating and not lastangle == highestRated then
             table.insert(highestRated, sortedTable[i].angle)
         else
             break
@@ -345,7 +345,7 @@ else
 
     local randomIndex = math.random(1, #highestRated)
     local randomValue = highestRated[randomIndex]
-
+    lastangle = sortedTable[1].evaluation
     -- update the evaluation of the randomly selected angle
     for i = 1, #angleTable do
         if angleTable[i] == randomValue then
@@ -445,6 +445,13 @@ end
 
 -- OnTickUpdate
 local function OnCreateMove(userCmd)
+    local angle
+    if mRoll:GetValue() == true then
+        userCmd:SetViewAngles(EulerAngles( 0, 0, 45):Unpack())
+    else
+        userCmd:SetViewAngles(EulerAngles( 0, 0, 0):Unpack())
+    end
+
     local me = WPlayer.GetLocal()
     local pLocal = entities.GetLocalPlayer()
     if not pLocal then return end
@@ -721,6 +728,8 @@ end
 local function OnUnload()                                -- Called when the script is unloaded
     MenuLib.RemoveMenu(menu)                             -- Remove the menu
     client.Command('play "ui/buttonclickrelease"', true) -- Play the "buttonclickrelease" sound
+    local angle = EulerAngles( 0, 0, 0)
+    userCmd.SetViewAngles(angle)
 end
 
 client.Command('play "ui/buttonclickrelease"', true) -- Play the "buttonclickrelease" sound
