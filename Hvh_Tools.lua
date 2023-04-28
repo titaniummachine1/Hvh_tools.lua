@@ -445,11 +445,37 @@ end
 
 -- OnTickUpdate
 local function OnCreateMove(userCmd)
+
+    if mslowwalk:GetValue() ~= 100 and input.IsButtonDown(mSKey:GetValue()) then
+        local slowwalk = mslowwalk:GetValue() * 0.01
+        userCmd:SetForwardMove(userCmd:GetForwardMove() * slowwalk)
+        userCmd:SetSideMove(userCmd:GetSideMove() * slowwalk)
+        userCmd:SetUpMove(userCmd:GetUpMove() * slowwalk)
+    end
+
     local angle
     if mRoll:GetValue() == true then
-        userCmd:SetViewAngles(EulerAngles( 0, 0, 45):Unpack())
+        if input.IsButtonDown(mSKey:GetValue()) then
+        local angleRoll = math.random(1, 2)
+        if angleRoll == 1 then
+            angleRoll = 90
+        else
+            angleRoll = -90
+        end
     else
-        userCmd:SetViewAngles(EulerAngles( 0, 0, 0):Unpack())
+        local angleRoll = 90
+        angleRoll = math.random(1, 2)
+        if angleRoll == 1 then
+            angleRoll = 90
+        else
+            angleRoll = -90
+        end
+    end
+
+        --angleRoll
+        userCmd:SetViewAngles(EulerAngles( nil, nil, angleRoll):Unpack())
+    else
+        userCmd:SetViewAngles(EulerAngles( nil, nil, 0):Unpack())
     end
 
     local me = WPlayer.GetLocal()
@@ -479,13 +505,6 @@ local function OnCreateMove(userCmd)
                 end
             end
         end
-    end
-
-    if mslowwalk:GetValue() ~= 100 and input.IsButtonDown(mSKey:GetValue()) then
-        local slowwalk = mslowwalk:GetValue() * 0.01
-        userCmd:SetForwardMove(userCmd:GetForwardMove() * slowwalk)
-        userCmd:SetSideMove(userCmd:GetSideMove() * slowwalk)
-        userCmd:SetUpMove(userCmd:GetUpMove() * slowwalk)
     end
 
     if userCmd.command_number % mDelay:GetValue() == 0 then -- Check if the command number is even. (Potentially inconsistent, but it works).
