@@ -52,6 +52,7 @@ local RandomToggle    = menu:AddComponent(MenuLib.Checkbox("Jitter Yaw", true))
 
 local mDelay          = menu:AddComponent(MenuLib.Slider("jitter Speed", 1, 66, 1))
 local atenemy         = menu:AddComponent(MenuLib.Checkbox("At enemy", true))
+local mOldMethod         = menu:AddComponent(MenuLib.Checkbox("Old Method", false))
 
 client.SetConVar("cl_vWeapon_sway_interp", 0)              -- Set cl_vWeapon_sway_interp to 0
 client.SetConVar("cl_jiggle_bone_framerate_cutoff", 0)     -- Set cl_jiggle_bone_framerate_cutoff to 0
@@ -206,7 +207,7 @@ callbacks.Register("FireGameEvent", "exampledamageLogger", damageLogger)
 
 
 -- define the angle table, evaluation table, and usage table
-local predefinedAngles = { 135, -135, 405, -405 }
+local predefinedAngles = { 145, -145, 390, -390}
 local predefinedEvaluations = { 1, 1, 1, 1 }
 local usageTable = { 0, 0, 0, 0 }
 
@@ -218,7 +219,24 @@ for i = 1, #predefinedAngles do
     table.insert(evaluationTable, predefinedEvaluations[i])
 end
 
+local function createAngleTable()
+    -- define the angle table, evaluation table, and usage table
+    predefinedAngles = { 145, -145, 390, -390}
+    predefinedEvaluations = { 1, 1, 1, 1 }
+    usageTable = { 0, 0, 0, 0 }
+
+    -- initialize the angle table, evaluation table, and usage table with the predefined values
+    angleTable = {}
+    evaluationTable = {}
+    for i = 1, #predefinedAngles do
+        table.insert(angleTable, predefinedAngles[i])
+        table.insert(evaluationTable, predefinedEvaluations[i])
+    end
+end
+
 function randomizeValue()
+
+if not mOldMethod then
     -- update evaluationTable by 0.1 for each angle every iteration
     if Got_Hit == true then
         for i = 1, #evaluationTable do
@@ -287,6 +305,67 @@ function randomizeValue()
 
     -- return the selected angle
     return randomValue
+
+else
+    if #angleTable == 0 then
+        -- if all angles have been used, regenerate the table
+        createAngleTable()
+    end
+
+    -- update evaluationTable by 0.1 for each angle every iteration
+    if Got_Hit == true then
+        for i = 1, #evaluationTable do
+            if evaluationTable[i] > 1 then
+                evaluationTable[i] = evaluationTable[i] - 0.1
+            elseif evaluationTable[i] < 1 then
+                evaluationTable[i] = evaluationTable[i] + 0.1
+            end
+        end
+    end
+ 
+    
+
+    -- sort angleTable by evaluationTable in descending order
+    local sortedTable = {}
+    for i = 1, #angleTable do
+        sortedTable[i] = {angle = angleTable[i], evaluation = evaluationTable[i]}
+    end
+    table.sort(sortedTable, function(a, b) return a.evaluation > b.evaluation end)
+
+    -- find the highest rated angles and randomize between them
+    local highestRated = {}
+    local highestRating = sortedTable[1].evaluation
+    for i = 1, #sortedTable do
+        if sortedTable[i].evaluation == highestRating then
+            table.insert(highestRated, sortedTable[i].angle)
+        else
+            break
+        end
+    end
+
+    local randomIndex = math.random(1, #highestRated)
+    local randomValue = highestRated[randomIndex]
+
+    -- update the evaluation of the randomly selected angle
+    for i = 1, #angleTable do
+        if angleTable[i] == randomValue then
+            evaluationTable[i] = 0.9
+            break
+        end
+    end
+
+    -- remove the selected angle from angleTable and evaluationTable
+    for i = 1, #angleTable do
+        if angleTable[i] == randomValue then
+            table.remove(angleTable, i)
+            table.remove(evaluationTable, i)
+            break
+        end
+    end
+
+    return randomValue
+end
+
 end
 
 
